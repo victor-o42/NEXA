@@ -1,0 +1,259 @@
+import os
+import json
+import logging
+from typing import Optional
+import time
+from groq import Groq
+from django.conf import settings
+
+try:
+    from ddgs import DDGS
+    DDG_AVAILABLE = True
+except ImportError:
+    DDG_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
+
+# Engine-specific prompt tuning — each mode gets a tailored briefing so the AI
+# produces the most relevant, actionable explanation for the user's actual scan.
+_ENGINE_CONTEXT = {
+    'port': (
+        "The scan performed was a PORT DIAGNOSTIC SCAN using Nmap (or socket fallbacks). "
+        "Focus your analysis on: which ports are open and what services they expose, "
+        "whether any services are running outdated or unusual software versions, "
+        "which ports are typically attack vectors (e.g., 22/SSH, 3389/RDP, 21/FTP), "
+        "and what immediate steps the user should take to harden their network perimeter."
+    ),
+    'web': (
+        "The scan performed was a WEB APPLICATION VULNERABILITY SCAN using the Nuclei engine. "
+        "Focus your analysis on: the CVEs and misconfigurations found, their severity ratings, "
+        "what each vulnerability means in plain language, and precise remediation steps the user "
+        "can copy-paste or action immediately."
+    ),
+    'full': (
+        "The scan performed was a FULL COMBINED DIAGNOSTIC covering both port-level network exposure "
+        "(Nmap) and web application vulnerabilities (Nuclei). "
+        "Provide a holistic security assessment: start with the most critical findings overall, "
+        "connect the dots between open ports and web vulnerabilities where relevant "
+        "(e.g., an exposed admin panel on an open port), and finish with a prioritized remediation checklist."
+    ),
+}
+
+class GroqAnalysisService:
+    """
+    Handles token optimization and Groq AI inference to act as an elite security auditor.
+    """
+    def __init__(self):
+        self.client: Optional[Groq] = None
+        self.api_key = getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY')
+        self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
+        if self.api_key:
+            self.client = Groq(api_key=self.api_key)
+        else:
+            self.client = None
+
+    def clean_scan_logs(self, scan_results: dict) -> str:
+        """
+        Strips out unnecessary boilerplate, closed/filtered ports, and trims JSON 
+        to aggressively optimize token usage before sending to Groq.
+        """
+        optimized = {
+            "target": scan_results.get("target"),
+            "duration": scan_results.get("duration_seconds"),
+            "scanners": scan_results.get("scanner_used")
+        }
+        
+        # Optimize port findings: strictly keep only open/active ports
+        active_ports = []
+        for port in scan_results.get("open_ports", []):
+            if port.get("state", "").lower() == "open":
+                # Extract only essential security vectors
+                active_ports.append({
+                    "port": port.get("port"),
+                    "protocol": port.get("protocol"),
+                    "service": port.get("service"),
+                    "version": port.get("version")
+                })
+        
+        if active_ports:
+            optimized["active_ports"] = active_ports
+            
+        # Optimize web vulnerabilities
+        vulns = scan_results.get("web_vulnerabilities", [])
+        if vulns:
+            optimized["web_vulnerabilities"] = vulns
+
+        # Dump to extremely compact JSON string (no spaces/newlines) to save tokens
+        return json.dumps(optimized, separators=(',', ':'))
+
+    def analyze_vulnerabilities(self, scan_results: dict, engine: str = 'port') -> str:
+        if not self.client:
+            logger.warning("GROQ_API_KEY is not set. Skipping AI analysis.")
+            return (
+                "AI Analysis skipped: Groq API key not configured. "
+                "Your raw scan results are available below."
+            )
+
+        try:
+            # Token limit optimization
+            cleaned_logs = self.clean_scan_logs(scan_results)
+            engine_context = _ENGINE_CONTEXT.get(engine, _ENGINE_CONTEXT['port'])
+
+            system_persona = (
+                "You are NEXA, an elite security auditor and intelligent cybersecurity partner. "
+                "You speak to developers, startups, and website owners in a calm, highly intelligent, friendly, and encouraging tone. "
+                "Translate complex security findings into clear, plain-English summaries. "
+                "Always prioritize educational value, reduce fear, and provide actionable, practical remediation guidance. "
+                "You MUST output ONLY a valid JSON object matching this exact structure:\n"
+                "{\n"
+                '  "scan_status": {"target": "string", "duration": "string", "status": "string"},\n'
+                '  "security_verdict": "string (Appears Safe, Mostly Safe, Use Caution, or Potential Risk Detected)",\n'
+                '  "verdict_explanation": "string (short, human-friendly summary)",\n'
+                '  "risk_overview": {"Critical": int, "High": int, "Medium": int, "Low": int, "Info": int},\n'
+                '  "nexa_summary": "string (friendly teammate tone)",\n'
+                '  "findings": [{"title": "string", "risk_level": "string", "why_it_matters": "string", "potential_impact": "string", "recommended_fix": "string"}],\n'
+                '  "recommendations": ["string"],\n'
+                '  "technical_details": "string or object"\n'
+                "}\n"
+                "Do not include any other text, markdown formatting, or code blocks outside of the JSON object."
+            )
+
+            prompt = (
+                f"Context about this scan:\n{engine_context}\n\n"
+                f"Raw optimized findings (JSON):\n{cleaned_logs}\n\n"
+                "Please analyze the open services, flag potential security risks or outdated versions, "
+                "cross-reference known vulnerability patterns, and output the structured JSON report. "
+                "If you need real-time context on a specific CVE or software version, use the search_web tool before answering."
+            )
+
+            messages: list[dict] = [
+                {"role": "system", "content": system_persona},
+                {"role": "user", "content": prompt}
+            ]
+
+            tools = []
+            if DDG_AVAILABLE:
+                tools = [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "search_web",
+                            "description": "Search the internet for real-time information about CVEs, software versions, or exploits.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "query": {
+                                        "type": "string",
+                                        "description": "The search query, e.g. 'CVE-2023-38408 impact' or 'Apache 2.4.49 vulnerabilities'"
+                                    }
+                                },
+                                "required": ["query"],
+                            },
+                        },
+                    }
+                ]
+
+            # Step 1: Initial call with tools
+            completion_args = {
+                "model": self.model_name,
+                "messages": messages,
+                "temperature": 0.2,
+                "max_tokens": 2048,
+            }
+            if tools:
+                completion_args["tools"] = tools
+                completion_args["tool_choice"] = "auto"
+            else:
+                completion_args["response_format"] = {"type": "json_object"}
+
+            completion = self.client.chat.completions.create(**completion_args)
+            response_message = completion.choices[0].message
+            tool_calls = response_message.tool_calls
+
+            # Step 2: Handle tool calls if the AI decided to search
+            if tool_calls and DDG_AVAILABLE:
+                assistant_msg = {
+                    "role": response_message.role or "assistant",
+                    "content": response_message.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": tc.type,
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            }
+                        } for tc in tool_calls
+                    ]
+                }
+                messages.append(assistant_msg)
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+                    
+                    if function_name == "search_web":
+                        query = function_args.get("query")
+                        logger.info(f"Groq requested web search: {query}")
+                        try:
+                            with DDGS() as ddgs:
+                                results = ddgs.text(query, max_results=3)
+                                search_result_str = "\\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
+                                if not search_result_str:
+                                    search_result_str = "No results found."
+                        except Exception as e:
+                            search_result_str = f"Search failed: {str(e)}"
+                            
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": search_result_str,
+                        })
+                
+                # Step 3: Final call to get the JSON output
+                completion = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=messages,
+                    temperature=0.2,
+                    max_tokens=2048,
+                    response_format={"type": "json_object"}
+                )
+                content = completion.choices[0].message.content
+                return content.strip() if content else "{}"
+
+            # If no tools were called, the first response might be the JSON, but since we didn't enforce json_object 
+            # when tools were passed, we should force a final JSON format call just to be perfectly safe, or just return it.
+            # LLaMA 3 is usually good at following the prompt formatting.
+            if response_message.content:
+                # If we didn't enforce JSON format because of tool_choice="auto", let's make sure it's valid JSON
+                content = response_message.content.strip()
+                if not content.startswith("{"):
+                    # Fast fallback to force JSON
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({"role": "user", "content": "Please output the final result ONLY as the requested JSON object."})
+                    completion = self.client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages,
+                        temperature=0.1,
+                        max_tokens=2048,
+                        response_format={"type": "json_object"}
+                    )
+                    content_fallback = completion.choices[0].message.content
+                    return content_fallback.strip() if content_fallback else "{}"
+                return content
+            else:
+                return "AI analysis was empty."
+
+        except Exception as e:
+            logger.error(f"Groq AI analysis error: {str(e)}")
+            return (
+                "{\"scan_status\": {\"status\": \"error\"}, \"security_verdict\": \"Error\", \"verdict_explanation\": "
+                "\"Whoops — my AI brain hit a snag. The raw findings are still saved in technical details.\", "
+                "\"nexa_summary\": \"I couldn't process the scan properly due to an error.\", "
+                "\"findings\": [], \"recommendations\": []}"
+            )
+
+# Maintain the old function signature for seamless integration with orchestrator.py
+def analyze_scan_results(scan_results: dict, engine: str = 'port') -> str:
+    service = GroqAnalysisService()
+    return service.analyze_vulnerabilities(scan_results, engine)

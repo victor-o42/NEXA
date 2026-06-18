@@ -1,0 +1,360 @@
+/* ── Google Fonts — must lead before all other rules (PostCSS requirement) ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE LAYER
+   Dark is NEXA's native mode. Light mode is a rich indigo-tinted slate —
+   NOT plain white. The brand orbs, glass, and accents must always show.
+═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  /*
+    ── NEXA design token system ──
+    All inline style={{ color: ... }} references in React components MUST use
+    these vars. This is the only way inline styles react to the dark/light class.
+    Dark values are defined on :root (also covers html.dark).
+    Light values override on html:not(.dark).
+  */
+  :root {
+    /* Text */
+    --c-text-primary:   #e8eaf0;
+    --c-text-secondary: rgba(255,255,255,0.45);
+    --c-text-muted:     rgba(255,255,255,0.28);
+    --c-text-hint:      rgba(255,255,255,0.18);
+    /* Cyan accent (slightly softened for dark bg) */
+    --c-accent:         #00F2FE;
+    --c-accent-muted:   rgba(0,242,254,0.65);
+    --c-accent-dim:     rgba(0,242,254,0.22);
+    /* Purple accent */
+    --c-purple:         #9B5DE5;
+    --c-purple-dim:     rgba(155,93,229,0.2);
+    /* Surfaces */
+    --c-surface:        rgba(255,255,255,0.04);
+    --c-surface-2:      rgba(255,255,255,0.03);
+    --c-surface-hover:  rgba(255,255,255,0.07);
+    --c-surface-inset:  rgba(255,255,255,0.025);
+    /* Borders */
+    --c-border:         rgba(255,255,255,0.08);
+    --c-border-subtle:  rgba(255,255,255,0.05);
+    --c-border-accent:  rgba(0,242,254,0.22);
+    /* Scanner option card */
+    --c-opt-selected-bg:     rgba(0,242,254,0.07);
+    --c-opt-selected-border: rgba(0,242,254,0.28);
+    --c-opt-selected-icon:   rgba(0,242,254,0.14);
+    --c-opt-unselected-bg:   rgba(255,255,255,0.02);
+    --c-opt-unselected-border: rgba(255,255,255,0.06);
+    /* Status badge (System Secured) */
+    --c-badge-bg:        rgba(0,242,254,0.06);
+    --c-badge-border:    rgba(0,242,254,0.14);
+    /* Footer / inset card */
+    --c-footer-bg:       rgba(255,255,255,0.03);
+    --c-footer-border:   rgba(255,255,255,0.05);
+    /* Scan log row hover */
+    --c-row-hover:       rgba(255,255,255,0.02);
+    /* Input */
+    --c-input-bg:        rgba(255,255,255,0.04);
+    --c-input-border:    rgba(255,255,255,0.09);
+    --c-input-color:     #e8eaf0;
+    /* Signout button */
+    --c-icon-btn-bg:     rgba(255,255,255,0.04);
+    --c-icon-btn-border: rgba(255,255,255,0.08);
+    --c-icon-color:      rgba(255,255,255,0.45);
+    /* Staging footer */
+    --c-staging-text:    rgba(255,255,255,0.35);
+  }
+
+  html:not(.dark) {
+    /* Text — dark navy on indigo background */
+    --c-text-primary:   #0d1829;
+    --c-text-secondary: rgba(13,24,41,0.62);
+    --c-text-muted:     rgba(13,24,41,0.45);
+    --c-text-hint:      rgba(13,24,41,0.3);
+    /* Cyan — slightly deeper so it reads on light bg */
+    --c-accent:         #00b8cc;
+    --c-accent-muted:   rgba(0,184,204,0.8);
+    --c-accent-dim:     rgba(0,184,204,0.15);
+    /* Purple */
+    --c-purple:         #7c3aed;
+    --c-purple-dim:     rgba(124,58,237,0.15);
+    /* Surfaces */
+    --c-surface:        rgba(255,255,255,0.65);
+    --c-surface-2:      rgba(255,255,255,0.5);
+    --c-surface-hover:  rgba(255,255,255,0.8);
+    --c-surface-inset:  rgba(255,255,255,0.4);
+    /* Borders */
+    --c-border:         rgba(0,0,0,0.08);
+    --c-border-subtle:  rgba(0,0,0,0.05);
+    --c-border-accent:  rgba(0,184,204,0.3);
+    /* Scanner option */
+    --c-opt-selected-bg:     rgba(0,184,204,0.1);
+    --c-opt-selected-border: rgba(0,184,204,0.35);
+    --c-opt-selected-icon:   rgba(0,184,204,0.18);
+    --c-opt-unselected-bg:   rgba(255,255,255,0.5);
+    --c-opt-unselected-border: rgba(0,0,0,0.07);
+    /* Status badge */
+    --c-badge-bg:        rgba(0,184,204,0.1);
+    --c-badge-border:    rgba(0,184,204,0.25);
+    /* Footer */
+    --c-footer-bg:       rgba(255,255,255,0.45);
+    --c-footer-border:   rgba(0,0,0,0.06);
+    /* Row hover */
+    --c-row-hover:       rgba(0,0,0,0.03);
+    /* Input */
+    --c-input-bg:        rgba(255,255,255,0.7);
+    --c-input-border:    rgba(0,0,0,0.1);
+    --c-input-color:     #0d1829;
+    /* Icon button */
+    --c-icon-btn-bg:     rgba(0,0,0,0.05);
+    --c-icon-btn-border: rgba(0,0,0,0.08);
+    --c-icon-color:      rgba(13,24,41,0.55);
+    /* Staging footer */
+    --c-staging-text:    rgba(13,24,41,0.45);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Premium Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--c-accent-dim);
+  }
+
+  /* ── DARK MODE (default) ── */
+  body {
+    background-color: #0B0C10;
+    color: #e8eaf0;
+    min-height: 100vh;
+    transition: background-color 0.4s ease, color 0.4s ease;
+
+    /*
+      Signature NEXA mesh gradient — cyan NW corner, amethyst SE corner.
+      These are deliberately subtle so the fixed orb layers in App.jsx pop.
+    */
+    background-image:
+      radial-gradient(ellipse at 0% 0%,   rgba(0,242,254,0.06)  0%, transparent 50%),
+      radial-gradient(ellipse at 100% 100%, rgba(155,93,229,0.07) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /*
+    ── LIGHT MODE ──
+    Rich indigo-slate (#e8edf8), NOT white. The brand orbs are cranked up
+    to 0.22 opacity so they're clearly visible on the lighter background.
+    Glass cards flip to frosted-white. Text goes dark navy.
+  */
+  html:not(.dark) body {
+    background-color: #e8edf8;
+    color: #0d1829;
+    background-image:
+      radial-gradient(ellipse at 10% 5%,   rgba(0,242,254,0.22)  0%, transparent 52%),
+      radial-gradient(ellipse at 90% 95%, rgba(155,93,229,0.18) 0%, transparent 52%),
+      radial-gradient(ellipse at 50% 50%, rgba(79,172,254,0.10)  0%, transparent 60%);
+    background-attachment: fixed;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT LAYER — glass primitives
+═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Dark glass card (default) ── */
+  .glass-container {
+    background: rgba(255,255,255,0.045);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  /* ── Light glass card override ── */
+  html:not(.dark) .glass-container {
+    background: rgba(255,255,255,0.62);
+    border-color: rgba(0,0,0,0.06);
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.1),
+      inset 0 1px 0 rgba(255,255,255,0.95);
+  }
+
+  /* ── Hover lift for interactive cards ── */
+  .glass-container-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .glass-container-hover:hover {
+    border-color: rgba(0,242,254,0.2);
+    transform: translateY(-1px);
+    box-shadow:
+      0 14px 40px rgba(0,0,0,0.45),
+      0 0 0 1px rgba(0,242,254,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  html:not(.dark) .glass-container-hover:hover {
+    border-color: rgba(0,242,254,0.35);
+    box-shadow:
+      0 14px 40px rgba(0,0,0,0.12),
+      0 0 0 1px rgba(0,242,254,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.95);
+  }
+
+  /* ── Text helpers that adapt to mode ── */
+  .text-adaptive-primary   { color: #e8eaf0; }
+  .text-adaptive-secondary { color: rgba(255,255,255,0.45); }
+
+  html:not(.dark) .text-adaptive-primary   { color: #0d1829; }
+  html:not(.dark) .text-adaptive-secondary { color: rgba(13,24,41,0.55); }
+
+  /* ── Sidebar nav items in light mode — inactive label color ── */
+  html:not(.dark) .nav-item-inactive { color: rgba(13,24,41,0.5); }
+  html:not(.dark) .nav-item-inactive:hover { color: #0d1829; }
+
+  /* ── Status / footer badges ── */
+  html:not(.dark) .glass-footer-badge {
+    background: rgba(0,0,0,0.04) !important;
+    border-color: rgba(0,0,0,0.08) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY LAYER — animations, glows, shimmer
+═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+
+  /* Neon glow text */
+  .text-glow-cyan   { text-shadow: 0 0 18px rgba(0,242,254,0.6); }
+  .text-glow-purple { text-shadow: 0 0 18px rgba(155,93,229,0.6); }
+
+  /* Status dot heartbeat */
+  @keyframes breathe {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(1.06); }
+  }
+  .animate-breathe { animation: breathe 3s ease-in-out infinite; }
+
+  /* Global ambient orb pulse (CSS fallback — Framer Motion drives the JS version) */
+  @keyframes orb-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.14); }
+  }
+  .animate-orb-cyan   { animation: orb-pulse 8s  ease-in-out infinite; }
+  .animate-orb-purple { animation: orb-pulse 10s ease-in-out infinite; animation-delay: 2s; }
+  .animate-orb-mid    { animation: orb-pulse 12s ease-in-out infinite; animation-delay: 4s; }
+
+  /* Shimmer progress bar */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  .shimmer-bar {
+    background: linear-gradient(90deg, #00F2FE 0%, #9B5DE5 50%, #00F2FE 100%);
+    background-size: 200% auto;
+    animation: shimmer 2.2s linear infinite;
+  }
+
+  /* Auth inputs */
+  input::placeholder { color: rgba(255,255,255,0.25); font-weight: 400; }
+  html:not(.dark) input::placeholder { color: rgba(13,24,41,0.35); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM LIQUID GLASS & NEON TOKENS (Shared Global Design System)
+═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Frosted heavy glass panel (replaces generic containers) */
+  .glass-panel {
+    background: var(--c-surface);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--c-border);
+    box-shadow: inset 0 1px 1px var(--c-surface-hover), 0 8px 32px rgba(0,0,0,0.4);
+    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+  html:not(.dark) .glass-panel {
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), 0 8px 32px rgba(0,0,0,0.08);
+  }
+
+  /* Deep matte input that illuminates on focus */
+  .glass-input {
+    background: var(--c-input-bg);
+    border: 1px solid var(--c-input-border);
+    color: var(--c-text-primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-input:focus {
+    background: var(--c-surface-hover);
+    border-color: var(--c-accent-muted);
+    box-shadow: 0 0 16px var(--c-accent-dim), inset 0 1px 2px var(--c-surface-hover);
+    outline: none;
+  }
+
+  /* Dribbble-style Theme Toggle Pill */
+  .theme-toggle-pill {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Base dark mode state (matte, sinking) */
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+  html:not(.dark) .theme-toggle-pill {
+    /* Base light mode state (highly polished, specular) */
+    background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(200,210,230,0.4));
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 
+      inset 0 1px 1px rgba(255,255,255,1), 
+      inset 0 -1px 2px rgba(255,255,255,0.4),
+      0 4px 12px rgba(0,0,0,0.1),
+      -2px -2px 8px rgba(255,255,255,0.8);
+  }
+
+  /* The sweeping specular highlight for light mode */
+  .theme-toggle-pill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.8) 45%, transparent 70%);
+    transform: translateX(-150%);
+    transition: transform 0.6s ease;
+    pointer-events: none;
+  }
+  html:not(.dark) .theme-toggle-pill:hover::before {
+    transform: translateX(150%);
+  }
+
+  /* Neon Glowing Volumetric Moon Icon */
+  .neon-moon-icon {
+    color: var(--c-accent);
+    filter: drop-shadow(0 0 8px var(--c-accent)) drop-shadow(0 0 16px var(--c-accent-dim));
+    transition: all 0.5s ease;
+  }
+  html:not(.dark) .neon-moon-icon {
+    color: rgba(0, 0, 0, 0.6);
+    filter: none;
+  }
+}
+
+@layer utilities {
+  .neon-glow-text {
+    text-shadow: 0 0 12px var(--c-accent-dim), 0 0 24px var(--c-accent-muted);
+  }
+  .neon-glow-box {
+    box-shadow: 0 0 20px var(--c-accent-dim), inset 0 0 10px var(--c-accent-dim);
+  }
+}

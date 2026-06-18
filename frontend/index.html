@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEXA</title>
+    <meta name="description" content="NEXA is an intelligent, non-destructive vulnerability scanner for developers and businesses. Port scanning, web auditing, and AI-powered remediation guidance." />
+    <meta name="theme-color" content="#0B0C10" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Inter font — loaded before paint so no FOUT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!--
+      Blocking theme init — this runs synchronously BEFORE React mounts and BEFORE
+      the first paint, so there is zero flash of the wrong theme. Defaults to dark
+      if the user has no saved preference (our brand default).
+    -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('nexa-theme');
+          // Dark is default — only remove it if the user explicitly chose light
+          if (saved === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          // localStorage blocked (private browsing, etc.) — just default to dark
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
