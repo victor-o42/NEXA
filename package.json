@@ -1,0 +1,9 @@
+{
+  "name": "nexa-root",
+  "version": "1.0.0",
+  "description": "Dummy package.json for Pxxl framework detection",
+  "scripts": {
+    "build": "echo 'Root build skipped, using multiple services'",
+    "start": "echo 'Root start skipped'"
+  }
+}
