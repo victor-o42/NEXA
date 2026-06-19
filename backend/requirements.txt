@@ -5,7 +5,7 @@ psycopg2-binary>=2.9.9
 python-dotenv>=1.0.1
 supabase>=2.4.0
 dj-database-url>=3.1.2
-python-nmap>=1.6.0
+python-nmap==0.7.1
 
 # Type Checking / Development Stubs
 django-stubs>=5.0.0
