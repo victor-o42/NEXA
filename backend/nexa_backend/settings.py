@@ -95,35 +95,8 @@ import socket
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 SUPABASE_DB_HOST = os.getenv('SUPABASE_DB_HOST', '')
 
-import urllib.parse
-
-def check_host_resolves(host):
-    if not host:
-        return False
-    try:
-        socket.getaddrinfo(host, None)
-        return True
-    except socket.gaierror:
-        return False
-
-# Determine primary host to check
-primary_host = None
+# If a full DATABASE_URL is provided, enforce Supabase connection!
 if DATABASE_URL:
-    try:
-        parsed = urllib.parse.urlparse(DATABASE_URL)
-        primary_host = parsed.hostname
-    except Exception:
-        pass
-elif SUPABASE_DB_HOST:
-    primary_host = SUPABASE_DB_HOST
-
-can_resolve_supabase = check_host_resolves(primary_host)
-
-if not can_resolve_supabase:
-    print(f"[NEXA settings.py] WARNING: Cannot resolve DB host '{primary_host}'. Falling back to local SQLite.")
-
-# If a full DATABASE_URL is provided and resolvable
-if DATABASE_URL and can_resolve_supabase:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -132,7 +105,7 @@ if DATABASE_URL and can_resolve_supabase:
         )
     }
     print("[NEXA settings.py] Connected to database via DATABASE_URL string.")
-elif SUPABASE_DB_HOST and can_resolve_supabase:
+elif SUPABASE_DB_HOST:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
