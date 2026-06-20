@@ -494,8 +494,13 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     };
 
     source.onerror = () => {
-      setConnectionError('Connection to NEXA diagnostic stream lost. Is the backend running?');
-      setIsScanning(false);
+      // If the backend naturally closes the stream because it finished fast, 
+      // but our artificial frontend delay hasn't processed 'completed' yet, ignore the error!
+      const hasCompleted = messageQueueRef.current.some(m => m.status === 'completed') || !isScanning;
+      if (!hasCompleted) {
+        setConnectionError('Connection to NEXA diagnostic stream lost. Is the backend running?');
+        setIsScanning(false);
+      }
       source.close();
     };
   };
