@@ -27,7 +27,7 @@ function App() {
         if (!sessionStorage.getItem('login_tracked')) {
           sessionStorage.setItem('login_tracked', 'true');
           try {
-            await fetch('http://localhost:8000/api/v1/user/login-event/', {
+            await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/login-event/', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${s.access_token}`,

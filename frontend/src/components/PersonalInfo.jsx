@@ -66,7 +66,7 @@ export default function PersonalInfo({ session }) {
 
       // Sync with Django backend
       const { data: { session: activeSession } } = await supabase.auth.getSession();
-      const response = await fetch('http://localhost:8000/api/v1/user/profile/update/', {
+      const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/profile/update/', {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${activeSession.access_token}`,
@@ -155,7 +155,7 @@ export default function PersonalInfo({ session }) {
       const { data: { session } } = await supabase.auth.getSession();
       
       // Call our Django backend deletion endpoint
-      const response = await fetch('http://localhost:8000/api/v1/user/delete/', {
+      const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/delete/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

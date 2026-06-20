@@ -346,7 +346,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     setHistoryLoading(true);
     try {
       if (!session) return;
-      const response = await fetch('http://localhost:8000/api/v1/user/scan-history/', {
+      const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/scan-history/', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -367,7 +367,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   const fetchProfile = useCallback(async () => {
     try {
       if (!session) return;
-      const response = await fetch('http://localhost:8000/api/v1/user/profile/', {
+      const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/profile/', {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (response.ok) {
@@ -430,7 +430,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     isDisplayingRef.current = false;
     if (eventSourceRef.current) eventSourceRef.current.close();
 
-    const url = `http://127.0.0.1:8000/api/v1/scan/stream/?target=${encodeURIComponent(target.trim())}&engine=${selectedScanner}&token=${session?.access_token || ''}`;
+    const url = `${(window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click')}/api/v1/scan/stream/?target=${encodeURIComponent(target.trim())}&engine=${selectedScanner}&token=${session?.access_token || ''}`;
     const source = new EventSource(url);
     eventSourceRef.current = source;
 

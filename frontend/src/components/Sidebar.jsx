@@ -115,7 +115,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch('http://localhost:8000/api/v1/user/profile/', {
+      const res = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/profile/', {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (res.ok) {
