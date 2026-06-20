@@ -30,11 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-dev')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 # Allowed hosts configuration
-ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '')
-if ALLOWED_HOSTS_ENV:
-    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
-else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'nexa-scan.click']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
