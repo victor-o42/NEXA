@@ -6,6 +6,8 @@ python-dotenv>=1.0.1
 supabase>=2.4.0
 dj-database-url>=3.1.2
 python-nmap==0.7.1
+groq>=0.4.2
+duckduckgo-search>=5.0.0
 
 # Type Checking / Development Stubs
 django-stubs>=5.0.0
