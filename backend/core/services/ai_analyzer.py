@@ -42,15 +42,38 @@ _ENGINE_CONTEXT = {
 class GroqAnalysisService:
     """
     Handles token optimization and Groq AI inference to act as an elite security auditor.
+    Automatically rotates through multiple API keys if rate-limited.
     """
     def __init__(self):
-        self.client: Optional[Groq] = None
-        self.api_key = getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY')
+        self.clients = []
+        
+        # Load multiple keys separated by comma
+        raw_keys = getattr(settings, 'GROQ_API_KEYS', None) or os.environ.get('GROQ_API_KEYS')
+        
+        # Fallback to single key if GROQ_API_KEYS is not set
+        if not raw_keys:
+            single_key = getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY')
+            if single_key:
+                raw_keys = single_key
+                
+        if raw_keys:
+            keys = [k.strip() for k in raw_keys.split(',') if k.strip()]
+            for k in keys:
+                self.clients.append(Groq(api_key=k))
+                
         self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
-        if self.api_key:
-            self.client = Groq(api_key=self.api_key)
-        else:
-            self.client = None
+        self.current_client_index = 0
+
+    def get_client(self) -> Optional[Groq]:
+        if not self.clients:
+            return None
+        return self.clients[self.current_client_index]
+        
+    def rotate_client(self):
+        """Rotates to the next API key in the pool."""
+        if self.clients:
+            self.current_client_index = (self.current_client_index + 1) % len(self.clients)
+            logger.info(f"Rotated to Groq API Key #{self.current_client_index + 1}")
 
     def clean_scan_logs(self, scan_results: dict) -> str:
         """
@@ -86,13 +109,14 @@ class GroqAnalysisService:
         # Dump to extremely compact JSON string (no spaces/newlines) to save tokens
         return json.dumps(optimized, separators=(',', ':'))
 
-    def analyze_vulnerabilities(self, scan_results: dict, engine: str = 'port') -> str:
-        if not self.client:
-            logger.warning("GROQ_API_KEY is not set. Skipping AI analysis.")
+    def analyze_vulnerabilities(self, scan_results: dict, engine: str = 'port') -> tuple[str, dict]:
+        client = self.get_client()
+        if not client:
+            logger.warning("GROQ_API_KEYS is not set. Skipping AI analysis.")
             return (
                 "AI Analysis skipped: Groq API key not configured. "
                 "Your raw scan results are available below."
-            )
+            ), {"prompt_tokens": 0, "completion_tokens": 0}
 
         try:
             # Token limit optimization
@@ -115,6 +139,8 @@ class GroqAnalysisService:
                 '  "recommendations": ["string"],\n'
                 '  "technical_details": "string or object"\n'
                 "}\n"
+                "CRITICAL RULE: You MUST base your verdict exclusively on the raw scanner logs provided. "
+                "If the scan logs are empty or contain 0 vulnerabilities, you MUST conclude 'Appears Safe', regardless of how suspicious the target domain name sounds. "
                 "Do not include any other text, markdown formatting, or code blocks outside of the JSON object."
             )
 
@@ -153,96 +179,130 @@ class GroqAnalysisService:
                     }
                 ]
 
-            # Step 1: Initial call with tools
-            completion_args = {
-                "model": self.model_name,
-                "messages": messages,
-                "temperature": 0.2,
-                "max_tokens": 2048,
-            }
-            if tools:
-                completion_args["tools"] = tools
-                completion_args["tool_choice"] = "auto"
-            else:
-                completion_args["response_format"] = {"type": "json_object"}
-
-            completion = self.client.chat.completions.create(**completion_args)
-            response_message = completion.choices[0].message
-            tool_calls = response_message.tool_calls
-
-            # Step 2: Handle tool calls if the AI decided to search
-            if tool_calls and DDG_AVAILABLE:
-                assistant_msg = {
-                    "role": response_message.role or "assistant",
-                    "content": response_message.content or "",
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "type": tc.type,
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            }
-                        } for tc in tool_calls
-                    ]
-                }
-                messages.append(assistant_msg)
-                for tool_call in tool_calls:
-                    function_name = tool_call.function.name
-                    function_args = json.loads(tool_call.function.arguments)
+            # --- Retry Logic for Multi-Key Fallback ---
+            max_retries = len(self.clients) if self.clients else 1
+            last_exception = None
+            
+            for attempt in range(max_retries):
+                client = self.get_client()
+                if not client:
+                    break
                     
-                    if function_name == "search_web":
-                        query = function_args.get("query")
-                        logger.info(f"Groq requested web search: {query}")
-                        try:
-                            with DDGS() as ddgs:
-                                results = ddgs.text(query, max_results=3)
-                                search_result_str = "\\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
-                                if not search_result_str:
-                                    search_result_str = "No results found."
-                        except Exception as e:
-                            search_result_str = f"Search failed: {str(e)}"
-                            
-                        messages.append({
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": function_name,
-                            "content": search_result_str,
-                        })
-                
-                # Step 3: Final call to get the JSON output
-                completion = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    temperature=0.2,
-                    max_tokens=2048,
-                    response_format={"type": "json_object"}
-                )
-                content = completion.choices[0].message.content
-                return content.strip() if content else "{}"
+                try:
+                    # Step 1: Initial call with tools
+                    completion_args = {
+                        "model": self.model_name,
+                        "messages": messages.copy(),
+                        "temperature": 0.2,
+                        "max_tokens": 2048,
+                    }
+                    if tools:
+                        completion_args["tools"] = tools
+                        completion_args["tool_choice"] = "auto"
+                    else:
+                        completion_args["response_format"] = {"type": "json_object"}
 
-            # If no tools were called, the first response might be the JSON, but since we didn't enforce json_object 
-            # when tools were passed, we should force a final JSON format call just to be perfectly safe, or just return it.
-            # LLaMA 3 is usually good at following the prompt formatting.
-            if response_message.content:
-                # If we didn't enforce JSON format because of tool_choice="auto", let's make sure it's valid JSON
-                content = response_message.content.strip()
-                if not content.startswith("{"):
-                    # Fast fallback to force JSON
-                    messages.append({"role": "assistant", "content": content})
-                    messages.append({"role": "user", "content": "Please output the final result ONLY as the requested JSON object."})
-                    completion = self.client.chat.completions.create(
-                        model=self.model_name,
-                        messages=messages,
-                        temperature=0.1,
-                        max_tokens=2048,
-                        response_format={"type": "json_object"}
-                    )
-                    content_fallback = completion.choices[0].message.content
-                    return content_fallback.strip() if content_fallback else "{}"
-                return content
-            else:
-                return "AI analysis was empty."
+                    completion = client.chat.completions.create(**completion_args)
+                    response_message = completion.choices[0].message
+                    tool_calls = response_message.tool_calls
+                    
+                    # Track initial usage
+                    usage_dict = {
+                        "prompt_tokens": completion.usage.prompt_tokens if completion.usage else 0,
+                        "completion_tokens": completion.usage.completion_tokens if completion.usage else 0,
+                    }
+
+                    # Step 2: Handle tool calls if the AI decided to search
+                    if tool_calls and DDG_AVAILABLE:
+                        assistant_msg = {
+                            "role": response_message.role or "assistant",
+                            "content": response_message.content or "",
+                            "tool_calls": [
+                                {
+                                    "id": tc.id,
+                                    "type": tc.type,
+                                    "function": {
+                                        "name": tc.function.name,
+                                        "arguments": tc.function.arguments,
+                                    }
+                                } for tc in tool_calls
+                            ]
+                        }
+                        messages.append(assistant_msg)
+                        for tool_call in tool_calls:
+                            function_name = tool_call.function.name
+                            function_args = json.loads(tool_call.function.arguments)
+                            
+                            if function_name == "search_web":
+                                query = function_args.get("query")
+                                logger.info(f"Groq requested web search: {query}")
+                                try:
+                                    with DDGS() as ddgs:
+                                        results = ddgs.text(query, max_results=3)
+                                        search_result_str = "\\n".join([f"- {r.get('title', '')}: {r.get('body', '')}" for r in results])
+                                        if not search_result_str:
+                                            search_result_str = "No results found."
+                                except Exception as e:
+                                    search_result_str = f"Search failed: {str(e)}"
+                                    
+                                messages.append({
+                                    "tool_call_id": tool_call.id,
+                                    "role": "tool",
+                                    "name": function_name,
+                                    "content": search_result_str,
+                                })
+                        
+                        # Step 3: Final call to get the JSON output
+                        completion = client.chat.completions.create(
+                            model=self.model_name,
+                            messages=messages,
+                            temperature=0.2,
+                            max_tokens=2048,
+                            response_format={"type": "json_object"}
+                        )
+                        content = completion.choices[0].message.content
+                        if completion.usage:
+                            usage_dict["prompt_tokens"] += completion.usage.prompt_tokens
+                            usage_dict["completion_tokens"] += completion.usage.completion_tokens
+                            
+                        return (content.strip() if content else "{}"), usage_dict
+
+                    # If no tools were called
+                    if response_message.content:
+                        content = response_message.content.strip()
+                        if not content.startswith("{"):
+                            # Fast fallback to force JSON
+                            messages.append({"role": "assistant", "content": content})
+                            messages.append({"role": "user", "content": "Please output the final result ONLY as the requested JSON object."})
+                            completion = client.chat.completions.create(
+                                model=self.model_name,
+                                messages=messages,
+                                temperature=0.1,
+                                max_tokens=2048,
+                                response_format={"type": "json_object"}
+                            )
+                            content_fallback = completion.choices[0].message.content
+                            if completion.usage:
+                                usage_dict["prompt_tokens"] += completion.usage.prompt_tokens
+                                usage_dict["completion_tokens"] += completion.usage.completion_tokens
+                            return (content_fallback.strip() if content_fallback else "{}"), usage_dict
+                        return content, usage_dict
+                    else:
+                        return "AI analysis was empty.", usage_dict
+                        
+                except Exception as e:
+                    last_exception = e
+                    if "429" in str(e) or "Too Many Requests" in str(e) or "Rate limit" in str(e):
+                        logger.warning(f"Rate limit hit on API Key index {self.current_client_index}. Rotating...")
+                        self.rotate_client()
+                        time.sleep(1) # Small backoff before retrying
+                        continue
+                    else:
+                        # Non-rate limit error, break out and fail
+                        break
+                        
+            # If we exhausted retries or hit a hard error
+            raise last_exception or Exception("Unknown error during Groq analysis")
 
         except Exception as e:
             logger.error(f"Groq AI analysis error: {str(e)}")
@@ -251,9 +311,9 @@ class GroqAnalysisService:
                 "\"Whoops — my AI brain hit a snag. The raw findings are still saved in technical details.\", "
                 "\"nexa_summary\": \"I couldn't process the scan properly due to an error.\", "
                 "\"findings\": [], \"recommendations\": []}"
-            )
+            ), {"prompt_tokens": 0, "completion_tokens": 0}
 
 # Maintain the old function signature for seamless integration with orchestrator.py
-def analyze_scan_results(scan_results: dict, engine: str = 'port') -> str:
+def analyze_scan_results(scan_results: dict, engine: str = 'port') -> tuple[str, dict]:
     service = GroqAnalysisService()
     return service.analyze_vulnerabilities(scan_results, engine)

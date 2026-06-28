@@ -1,0 +1,5 @@
+[build]
+command = "pip install -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput && bash install_nuclei.sh"
+
+[start]
+command = "gunicorn nexa_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4"

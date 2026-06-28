@@ -266,9 +266,9 @@ export default function ScanResults({ scanResult }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Raw Open Ports */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase mb-3" style={{ color: 'var(--c-text-muted)' }}>Raw Port Data</h4>
-                    {openPorts.length > 0 ? (
+                  {openPorts.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold uppercase mb-3" style={{ color: 'var(--c-text-muted)' }}>Port Diagnostics</h4>
                       <ul className="space-y-1">
                         {openPorts.map((portInfo, idx) => (
                           <li key={idx} className="flex justify-between text-[10px] font-mono p-2 rounded bg-black/20">
@@ -277,15 +277,13 @@ export default function ScanResults({ scanResult }) {
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="text-[10px] opacity-50">No port data available.</p>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Raw Web Vulns */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase mb-3" style={{ color: 'var(--c-text-muted)' }}>Raw Nuclei Data</h4>
-                    {webVulns.length > 0 ? (
+                  {webVulns.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold uppercase mb-3" style={{ color: 'var(--c-text-muted)' }}>Web Vulnerability Data</h4>
                       <ul className="space-y-1">
                         {webVulns.map((vuln, idx) => (
                           <li key={idx} className="flex justify-between text-[10px] font-mono p-2 rounded bg-black/20">
@@ -294,10 +292,8 @@ export default function ScanResults({ scanResult }) {
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="text-[10px] opacity-50">No vulnerabilities data available.</p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
               </div>

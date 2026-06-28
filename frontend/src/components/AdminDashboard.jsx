@@ -10,6 +10,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchMetrics();
+    // Live sync metrics every 15 seconds
+    const interval = setInterval(fetchMetrics, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchMetrics = async () => {
@@ -88,8 +91,8 @@ export default function AdminDashboard() {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} className="glass-container p-6 rounded-3xl border" style={{ borderColor: 'var(--c-border)' }}>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Total Tokens Consumed</h3>
-          <p className="text-4xl font-black" style={{ color: 'var(--c-accent)' }}>{metrics?.active_tokens}</p>
+          <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Total AI Tokens</h3>
+          <p className="text-4xl font-black" style={{ color: 'var(--c-accent)' }}>{metrics?.total_ai_tokens || 0}</p>
         </motion.div>
       </div>
 
@@ -104,18 +107,35 @@ export default function AdminDashboard() {
                 <th className="px-6 py-4 font-semibold">User</th>
                 <th className="px-6 py-4 font-semibold">Email</th>
                 <th className="px-6 py-4 font-semibold">Role</th>
+                <th className="px-6 py-4 font-semibold text-center">AI Tokens</th>
                 <th className="px-6 py-4 font-semibold text-center">Scans Used</th>
                 <th className="px-6 py-4 font-semibold text-right">Max Quota</th>
                 <th className="px-6 py-4 font-semibold text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y" style={{ divideColor: 'var(--c-border)' }}>
-              {metrics?.users.map((u, i) => (
+              {metrics?.users.map((u, i) => {
+                // Calculate if user is online (active in the last 2 minutes)
+                const isOnline = u.last_active && (new Date() - new Date(u.last_active)) < 2 * 60 * 1000;
+                
+                return (
                 <tr key={i} className="hover:bg-white/5 dark:hover:bg-black/20 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium" style={{ color: 'var(--c-text-primary)' }}>
-                      {u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : 'Unknown'}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <div className="relative flex h-3 w-3">
+                        {isOnline ? (
+                          <>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                          </>
+                        ) : (
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-gray-500 opacity-50"></span>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium" style={{ color: 'var(--c-text-primary)' }}>
+                        {u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : 'Unknown'}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>{u.email}</span>
@@ -126,6 +146,9 @@ export default function AdminDashboard() {
                     }`}>
                       {u.is_admin ? 'Admin (CEO)' : 'Standard'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className="text-sm font-mono text-cyan-400">{u.total_tokens?.toLocaleString() || 0}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <span className="text-sm font-mono" style={{ color: 'var(--c-text-primary)' }}>{u.scans_used}</span>
@@ -152,7 +175,7 @@ export default function AdminDashboard() {
                     </motion.button>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

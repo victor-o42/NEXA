@@ -63,6 +63,10 @@ class ScanHistory(models.Model):
         help_text="Friendly AI-generated context translating tech jargon to educational, human-readable instructions."
     )
     
+    # Token Tracking for API Cost Management
+    prompt_tokens = models.IntegerField(default=0, help_text="Tokens consumed by the prompt context sent to the AI.")
+    completion_tokens = models.IntegerField(default=0, help_text="Tokens consumed by the generated AI response.")
+    
     # Keep perfect timeline records for dashboard metrics and West African cloud latency checks.
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -86,6 +90,7 @@ class UserProfile(models.Model):
     max_scans = models.IntegerField(default=5, help_text="Maximum allowed scans for standard users.")
     scans_used = models.IntegerField(default=0, help_text="Number of scans performed by this user.")
     is_admin = models.BooleanField(default=False, help_text="Grants CEO Command Center access and bypasses scan quotas.")
+    last_active = models.DateTimeField(auto_now=True, help_text="Automatically tracks when the user was last active.")
 
     def __str__(self):
         return f"Profile: {self.user.username}"

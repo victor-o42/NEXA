@@ -313,7 +313,6 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   const [isScanning, setIsScanning]           = useState(false);
   const [streamMessages, setStreamMessages]   = useState([]);
   const [scanResult, setScanResult]           = useState(null);
-  const [selfScanMessage, setSelfScanMessage] = useState('');
   const [connectionError, setConnectionError] = useState('');
 
   // Real scan history fetched from Supabase
@@ -340,6 +339,28 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [streamMessages]);
+
+  // ── Heartbeat Ping for Accurate Online Status ──────────────────────────────
+  useEffect(() => {
+    if (!session) return;
+    const pingServer = async () => {
+      try {
+        await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/ping/', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+      } catch (err) {
+        // Silently fail if ping fails
+      }
+    };
+    
+    // Initial ping on load
+    pingServer();
+    
+    // Ping every 60 seconds
+    const intervalId = setInterval(pingServer, 60000);
+    return () => clearInterval(intervalId);
+  }, [session]);
 
   // ── Load real scan history from Supabase ──────────────────────────────────
   const fetchHistory = useCallback(async () => {
@@ -439,14 +460,6 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
       
       isDisplayingRef.current = true;
       const data = messageQueueRef.current.shift();
-
-      if (data.status === 'blocked') {
-        setSelfScanMessage(data.message);
-        setIsScanning(false);
-        source.close();
-        isDisplayingRef.current = false;
-        return;
-      }
       
       if (data.status === 'error') {
         setConnectionError(data.message);

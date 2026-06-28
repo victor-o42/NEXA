@@ -140,7 +140,13 @@ def run_nexa_orchestrator(target: str, engine: str = 'port', original_url: str |
     # ── WEB APPLICATION SCANNING ENGINE (Nuclei) ──────────────────────────────
     # Runs when engine is 'web' or 'full'
     if engine in ('web', 'full'):
-        nuclei_bin = shutil.which("nuclei")
+        # Check local project bin first (for Pxxl cloud deployment), then fallback to PATH
+        local_nuclei = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "bin", "nuclei")
+        if os.path.exists(local_nuclei):
+            nuclei_bin = local_nuclei
+        else:
+            nuclei_bin = shutil.which("nuclei")
+            
         if nuclei_bin:
             try:
                 scan_results["nuclei_active"] = True

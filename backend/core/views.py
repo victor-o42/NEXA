@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 import urllib.parse
 import socket
@@ -118,15 +119,45 @@ class ScanStreamView(APIView):
             # ── Rule 1: Self-Scan Awareness Routine ──────────────────────────────
             self_scan_domains = ["nexa-scan.click", "localhost", "127.0.0.1", "staging.nexa-scan.click"]
             if any(domain in clean_host for domain in self_scan_domains):
+                # Fake a real scan stream for immersion
+                time.sleep(1.0)
+                yield f"data: {json.dumps({'status': 'running', 'message': f'Resolving target: {clean_host}...'})}\n\n"
                 time.sleep(1.5)
-                yield f"data: {json.dumps({'status': 'blocked', 'message': 'Scanning NEXA itself? Bold move. Internal confidence check complete — all shields active.'})}\n\n"
-                ScanHistory.objects.create(
+                yield f"data: {json.dumps({'status': 'running', 'message': f'Resolved. Initiating diagnostic engine on {clean_host}...'})}\n\n"
+                time.sleep(2.0)
+                yield f"data: {json.dumps({'status': 'running', 'message': 'Wait a minute... analyzing target signature...'})}\n\n"
+                time.sleep(1.5)
+                
+                fake_summary = {
+                    "scan_status": {"target": clean_host, "duration": "2.5s", "status": "COMPLETED"},
+                    "security_verdict": "Appears Safe",
+                    "verdict_explanation": "Scanning NEXA itself? Bold move. Internal confidence check complete — all shields active.",
+                    "risk_overview": {"Critical": 0, "High": 0, "Medium": 0, "Low": 0, "Info": 1},
+                    "nexa_summary": "I see what you did there... You tried to run a diagnostic on my own architecture. While I appreciate the curiosity, my internal shields are fully active and hardened. I'm operating at peak efficiency. Let's redirect this firepower to a real external target.",
+                    "findings": [{
+                        "title": "Self-Scan Attempt Detected",
+                        "risk_level": "Info",
+                        "why_it_matters": "Shows healthy curiosity from the operator.",
+                        "potential_impact": "Slight ego boost for the NEXA internal defense systems.",
+                        "recommended_fix": "No remediation required. Redirect diagnostic to external domains."
+                    }],
+                    "recommendations": ["Run a diagnostic on an external domain to see actual vulnerabilities."],
+                    "technical_details": "Self-scan blocked by internal firewall rules."
+                }
+                
+                fake_ai_summary = json.dumps(fake_summary)
+                fake_results = {"target": clean_host, "status": "completed", "open_ports": [], "web_vulnerabilities": []}
+
+                scan_record = ScanHistory.objects.create(
                     user=current_user,
                     target=clean_host,
                     scan_type=ScanHistory.ScanType.PORT,
-                    status=ScanHistory.ScanStatus.BLOCKED,
-                    explanation="👀 Self-scan attempt blocked. Ego slightly boosted."
+                    status=ScanHistory.ScanStatus.COMPLETED,
+                    explanation=fake_ai_summary,
+                    results=fake_results
                 )
+                
+                yield f"data: {json.dumps({'status': 'completed', 'message': 'Diagnostic complete.', 'scan_id': scan_record.id, 'ai_summary': fake_ai_summary, 'scan_results': fake_results})}\n\n"
                 return
 
             # Map the engine to the DB scan type
@@ -194,7 +225,7 @@ class ScanStreamView(APIView):
             # ── Step 4: AI Analysis ───────────────────────────────────────────────
             yield f"data: {json.dumps({'status': 'running', 'message': 'Synthesizing findings through NEXA AI intelligence layer...'})}\n\n"
 
-            ai_summary = analyze_scan_results(scan_results, engine=effective_engine)
+            ai_summary, token_usage = analyze_scan_results(scan_results, engine=effective_engine)
 
             # ── Step 5: Persist and signal completion ─────────────────────────────
             # Save only the heavily optimized/filtered logs to the DB to save massive storage space
@@ -205,9 +236,11 @@ class ScanStreamView(APIView):
             except Exception:
                 cleaned_results = {"error": "Failed to clean logs."}
 
-            scan_record.status      = ScanHistory.ScanStatus.COMPLETED
-            scan_record.results     = cleaned_results
-            scan_record.explanation = ai_summary
+            scan_record.status            = ScanHistory.ScanStatus.COMPLETED
+            scan_record.results           = cleaned_results
+            scan_record.explanation       = ai_summary
+            scan_record.prompt_tokens     = token_usage.get("prompt_tokens", 0)
+            scan_record.completion_tokens = token_usage.get("completion_tokens", 0)
             scan_record.save()
 
             yield f"data: {json.dumps({'status': 'completed', 'message': 'Diagnostic complete. Your full report has been saved.', 'scan_id': scan_record.id, 'ai_summary': ai_summary, 'scan_results': cleaned_results})}\n\n"
@@ -292,6 +325,19 @@ class UserProfileView(APIView):
         
         return Response({"status": "updated", "first_name": first_name, "last_name": last_name})
 
+class UserPingView(APIView):
+    """
+    Lightweight endpoint called by the frontend every 60 seconds.
+    Updates the user's last_active timestamp to accurately reflect online status.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        if hasattr(request.user, 'profile'):
+            # Save automatically updates the 'last_active' auto_now field
+            request.user.profile.save(update_fields=['last_active'])
+        return Response({"status": "pinged"})
+
 class LoginEventView(APIView):
     """
     Records a real login event sent from the frontend.
@@ -315,6 +361,11 @@ class LoginEventView(APIView):
             user_agent=user_agent,
             status='success'
         )
+        
+        # Mark user as active
+        if hasattr(request.user, 'profile'):
+            request.user.profile.save()
+            
         return Response({"status": "logged"}, status=status.HTTP_201_CREATED)
 
 class LoginHistoryView(APIView):
@@ -348,26 +399,38 @@ class AdminMetricsView(APIView):
         total_users = User.objects.count()
         total_scans = ScanHistory.objects.count()
         
-        # We can sum all scans_used as token consumption
         from django.db.models import Sum
         active_tokens = UserProfile.objects.aggregate(Sum('scans_used'))['scans_used__sum'] or 0
+        
+        # Calculate total tokens globally
+        total_prompt_tokens = ScanHistory.objects.aggregate(Sum('prompt_tokens'))['prompt_tokens__sum'] or 0
+        total_completion_tokens = ScanHistory.objects.aggregate(Sum('completion_tokens'))['completion_tokens__sum'] or 0
+        total_ai_tokens = total_prompt_tokens + total_completion_tokens
         
         # Get users for quota grid
         users_list = []
         for p in UserProfile.objects.select_related('user').all():
+            # Calculate total tokens per user
+            user_scans = ScanHistory.objects.filter(user=p.user)
+            p_tokens = user_scans.aggregate(Sum('prompt_tokens'))['prompt_tokens__sum'] or 0
+            c_tokens = user_scans.aggregate(Sum('completion_tokens'))['completion_tokens__sum'] or 0
+            
             users_list.append({
                 "email": p.user.email,
                 "first_name": p.first_name,
                 "last_name": p.last_name,
                 "max_scans": p.max_scans,
                 "scans_used": p.scans_used,
-                "is_admin": p.is_admin
+                "is_admin": p.is_admin,
+                "last_active": p.last_active,
+                "total_tokens": p_tokens + c_tokens
             })
             
         return Response({
             "total_users": total_users,
             "total_scans": total_scans,
             "active_tokens": active_tokens,
+            "total_ai_tokens": total_ai_tokens,
             "users": users_list
         }, status=status.HTTP_200_OK)
 
