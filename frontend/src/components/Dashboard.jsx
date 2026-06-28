@@ -314,6 +314,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   const [streamMessages, setStreamMessages]   = useState([]);
   const [scanResult, setScanResult]           = useState(null);
   const [connectionError, setConnectionError] = useState('');
+  const [selfScanMessage, setSelfScanMessage] = useState('');
 
   // Real scan history fetched from Supabase
   const [scanHistory, setScanHistory]         = useState([]);
