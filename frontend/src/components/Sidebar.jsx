@@ -326,7 +326,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                     </div>
                   </div>
                   
-                  {djangoProfile?.is_admin && (
+                  {(userProfile?.user_metadata?.is_admin || djangoProfile?.is_admin) && (
                     <motion.button
                       onClick={() => { setActiveTab('admin'); setMobileMenuOpen(false); }}
                       whileTap={{ scale: 0.98 }}
@@ -340,7 +340,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                       <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4l-8 4v7c0 4.418 3.582 8 8 8s8-3.582 8-8V8l-8-4z" />
                       </svg>
-                      CEO Command Center
+                      Admin Console
                     </motion.button>
                   )}
                 </div>
@@ -455,7 +455,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
             </div>
             
             {/* Conditional Admin Link */}
-            {djangoProfile?.is_admin && (
+            {(userProfile?.user_metadata?.is_admin || djangoProfile?.is_admin) && (
               <motion.button
                 onClick={() => setActiveTab('admin')}
                 whileHover={{ scale: 1.02 }}
@@ -470,7 +470,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4l-8 4v7c0 4.418 3.582 8 8 8s8-3.582 8-8V8l-8-4z" />
                 </svg>
-                CEO Command Center
+                Admin Console
               </motion.button>
             )}
           </div>

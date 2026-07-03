@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass-container p-4 rounded-xl border shadow-xl" style={{ borderColor: 'var(--c-border)' }}>
+        <p className="font-bold text-sm mb-2" style={{ color: 'var(--c-text-primary)' }}>{label}</p>
+        {payload.map((entry, index) => (
+          <div key={`item-${index}`} className="flex items-center space-x-2 text-xs font-mono">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span style={{ color: 'var(--c-text-secondary)' }}>{entry.name}:</span>
+            <span className="font-bold" style={{ color: 'var(--c-text-primary)' }}>{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState(null);
@@ -94,6 +116,62 @@ export default function AdminDashboard() {
           <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Total AI Tokens</h3>
           <p className="text-4xl font-black" style={{ color: 'var(--c-accent)' }}>{metrics?.total_ai_tokens || 0}</p>
         </motion.div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top Users Bar Chart */}
+        <div className="lg:col-span-2 glass-container rounded-3xl p-6 border" style={{ borderColor: 'var(--c-border)' }}>
+          <h3 className="text-sm font-bold uppercase tracking-wider mb-6" style={{ color: 'var(--c-text-muted)' }}>Top Users by AI Tokens</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={metrics?.users?.slice().sort((a, b) => (b.total_tokens || 0) - (a.total_tokens || 0)).slice(0, 7) || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--c-border)" vertical={false} />
+                <XAxis dataKey="email" tickFormatter={(email) => email.split('@')[0]} stroke="var(--c-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--c-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'var(--c-surface)', opacity: 0.4 }} />
+                <Bar dataKey="total_tokens" name="AI Tokens" fill="var(--c-accent)" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Quota Utilization Pie Chart */}
+        <div className="glass-container rounded-3xl p-6 border flex flex-col" style={{ borderColor: 'var(--c-border)' }}>
+          <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--c-text-muted)' }}>Scan Quota Utilization</h3>
+          <div className="flex-1 min-h-[300px] w-full flex items-center justify-center relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Used Scans', value: metrics?.users?.reduce((acc, curr) => acc + (curr.scans_used || 0), 0) || 0 },
+                    { name: 'Available Quota', value: Math.max(0, (metrics?.users?.reduce((acc, curr) => acc + (curr.max_scans || 0), 0) || 0) - (metrics?.users?.reduce((acc, curr) => acc + (curr.scans_used || 0), 0) || 0)) }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  <Cell fill="var(--c-accent)" />
+                  <Cell fill="var(--c-border)" />
+                </Pie>
+                <RechartsTooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* Center Text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-4xl font-black" style={{ color: 'var(--c-text-primary)' }}>
+                {metrics?.total_scans}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider font-bold mt-1" style={{ color: 'var(--c-text-muted)' }}>
+                Total Used
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="glass-container rounded-3xl overflow-hidden border" style={{ borderColor: 'var(--c-border)' }}>

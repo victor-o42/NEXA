@@ -107,36 +107,40 @@ function StatusBadge({ status, verdict }) {
     const v = verdict.toUpperCase();
     if (v.includes('SAFE') || v.includes('SECURE') || v.includes('CLEAN')) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest backdrop-blur-md" style={{ background: 'rgba(74,222,128,0.05)', color: '#4ade80', boxShadow: 'inset 0 1px 0 rgba(74,222,128,0.15)' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400" style={{ boxShadow: '0 0 6px rgba(74,222,128,0.5)' }} />
           Secure
         </span>
       );
     } else if (v.includes('CRITICAL') || v.includes('HIGH')) {
        return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171', border: '1px solid rgba(248,113,113,0.25)' }}>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest backdrop-blur-md" style={{ background: 'rgba(248,113,113,0.05)', color: '#f87171', boxShadow: 'inset 0 1px 0 rgba(248,113,113,0.15)' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" style={{ boxShadow: '0 0 6px rgba(248,113,113,0.5)' }} />
           Critical Risk
         </span>
        );
     } else {
        return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest backdrop-blur-md" style={{ background: 'rgba(251,191,36,0.05)', color: '#fbbf24', boxShadow: 'inset 0 1px 0 rgba(251,191,36,0.15)' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" style={{ boxShadow: '0 0 6px rgba(251,191,36,0.5)' }} />
           Potential Risk
         </span>
        );
     }
   }
 
-  let bg, color, border, label = s;
-  if (s === 'COMPLETED') { bg = 'rgba(74,222,128,0.12)'; color = '#4ade80'; border = 'rgba(74,222,128,0.25)'; label = 'COMPLETED'; }
-  else if (s === 'FAILED') { bg = 'rgba(248,113,113,0.12)'; color = '#f87171'; border = 'rgba(248,113,113,0.25)'; }
-  else if (s === 'BLOCKED') { bg = 'rgba(251,191,36,0.12)'; color = '#fbbf24'; border = 'rgba(251,191,36,0.25)'; }
-  else { bg = 'rgba(0,242,254,0.08)'; color = 'var(--c-accent)'; border = 'rgba(0,242,254,0.2)'; }
+  let bg, color, dotColor, label = s;
+  if (s === 'COMPLETED') { bg = 'rgba(74,222,128,0.05)'; color = '#4ade80'; dotColor = '#4ade80'; label = 'COMPLETED'; }
+  else if (s === 'FAILED') { bg = 'rgba(248,113,113,0.05)'; color = '#f87171'; dotColor = '#f87171'; }
+  else if (s === 'BLOCKED') { bg = 'rgba(251,191,36,0.05)'; color = '#fbbf24'; dotColor = '#fbbf24'; }
+  else { bg = 'rgba(0,242,254,0.05)'; color = 'var(--c-accent)'; dotColor = 'var(--c-accent)'; }
   
   return (
     <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-      style={{ background: bg, color, border: `1px solid ${border}` }}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest backdrop-blur-md"
+      style={{ background: bg, color, boxShadow: `inset 0 1px 0 ${bg.replace('0.05', '0.15')}` }}
     >
+      <span className={`w-1.5 h-1.5 rounded-full ${s === 'FAILED' ? 'animate-pulse' : ''}`} style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}` }} />
       {label}
     </span>
   );
@@ -146,6 +150,8 @@ function StatusBadge({ status, verdict }) {
 
 function HistoryRow({ record, index }) {
   const [open, setOpen] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
+  
   const openPorts = record.results?.open_ports || [];
   const webVulns  = record.results?.web_vulnerabilities || [];
   const scanDate  = new Date(record.created_at).toLocaleString('en-GB', {
@@ -173,39 +179,42 @@ function HistoryRow({ record, index }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.25 }}
-      className="rounded-2xl overflow-hidden transition-all duration-200"
-      style={{ border: '1px solid var(--c-border-subtle)', background: 'var(--c-surface-2)' }}
+      className="rounded-2xl overflow-hidden transition-all duration-300"
+      style={{ 
+        border: '1px solid',
+        borderColor: open ? 'var(--c-accent-dim)' : 'var(--c-border-subtle)',
+        background: open ? 'var(--c-surface)' : 'var(--c-surface-2)',
+        boxShadow: open ? '0 12px 40px rgba(0,0,0,0.2)' : 'none'
+      }}
     >
-      {/* ── Collapsed header (always visible) ── */}
+      {/* ── Collapsed header ── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-4 p-4 text-left transition-colors duration-150 outline-none"
-        style={{ background: open ? 'var(--c-opt-selected-bg)' : 'transparent' }}
+        className="w-full flex items-center justify-between gap-4 p-5 text-left transition-colors duration-200 outline-none hover:bg-white/5"
       >
-        <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--c-text-muted)' }}>Target</p>
-            <p className="text-sm font-mono font-semibold truncate" style={{ color: 'var(--c-text-primary)' }}>{record.target}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--c-text-muted)' }}>Target</p>
+            <p className="text-sm font-sans font-semibold truncate" style={{ color: 'var(--c-text-primary)' }}>{record.target}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--c-text-muted)' }}>Engine</p>
-            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>{engineLabel}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--c-text-muted)' }}>Engine</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--c-text-secondary)' }}>{engineLabel}</p>
           </div>
           <div className="min-w-0 hidden sm:block">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--c-text-muted)' }}>Time</p>
-            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>{scanDate}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--c-text-muted)' }}>Time</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--c-text-secondary)' }}>{scanDate}</p>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--c-text-muted)' }}>Status</p>
+          <div className="min-w-0 flex items-center">
             <StatusBadge status={record.status} verdict={verdict} />
           </div>
         </div>
         {/* Chevron */}
         <motion.div
           animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0"
-          style={{ color: 'var(--c-text-muted)' }}
+          transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+          style={{ background: open ? 'rgba(0,242,254,0.1)' : 'var(--c-surface)', color: open ? 'var(--c-accent)' : 'var(--c-text-muted)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -221,81 +230,112 @@ function HistoryRow({ record, index }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-4" style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
+            <div className="p-5 pt-0 space-y-6">
 
               {/* AI Explanation / Summary */}
               {nexaSummary && (
-                <div className="mt-4 p-5 rounded-2xl shadow-sm" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-subtle)' }}>
-                  <div className="flex items-center gap-3 mb-3">
-                     <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm relative overflow-hidden" style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-accent)' }}>
-                       <img src={logo} alt="NEXA" className="w-5 h-5 object-contain" style={{ filter: 'drop-shadow(0 0 5px rgba(0,242,254,0.4))' }} />
+                <div className="rounded-2xl overflow-hidden shadow-lg border mt-2" style={{ background: 'var(--c-surface-3)', border: '1px solid var(--c-border-subtle)' }}>
+                  <div className="flex flex-col sm:flex-row gap-5 p-6">
+                     <div className="flex-shrink-0">
+                       <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden backdrop-blur-md" style={{ background: 'rgba(0,242,254,0.05)', border: '1px solid rgba(0,242,254,0.2)' }}>
+                         <img src={logo} alt="NEXA" className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(0,242,254,0.6)]" />
+                       </div>
                      </div>
-                     <div>
-                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>NEXA Analysis</p>
-                       {verdict && <p className="text-sm font-bold" style={{ color: 'var(--c-text-primary)' }}>Verdict: {verdict}</p>}
+                     <div className="flex-1 space-y-3">
+                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3" style={{ borderColor: 'var(--c-border-subtle)' }}>
+                         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>NEXA Analysis Report</p>
+                         {verdict && (
+                           <p className="text-lg font-black tracking-tight" style={{ color: 'var(--c-text-primary)' }}>
+                             {verdict}
+                           </p>
+                         )}
+                       </div>
+                       <p className="text-[13px] leading-loose font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                         {nexaSummary}
+                       </p>
                      </div>
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    {nexaSummary}
-                  </p>
                 </div>
               )}
 
-              {/* Raw results hidden behind a native detail/summary dropdown */}
+              {/* Raw results toggle */}
               {(openPorts.length > 0 || webVulns.length > 0) && (
-                <details className="mt-4 group">
-                  <summary className="text-[10px] font-bold uppercase tracking-wider cursor-pointer select-none p-3 rounded-xl transition-colors hover:bg-white/5 outline-none" style={{ color: 'var(--c-text-muted)', border: '1px solid var(--c-border-subtle)', background: 'var(--c-surface)' }}>
-                    View Raw Technical Details
-                  </summary>
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    {/* Open Ports */}
-                    {openPorts.length > 0 && (
-                      <div className="p-4 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text-muted)' }}>
-                          Open Ports ({openPorts.length})
-                        </p>
-                        <ul className="space-y-1.5">
-                          {openPorts.slice(0, 8).map((p, idx) => (
-                            <li key={idx} className="flex justify-between items-center text-xs font-mono">
-                              <span className="font-bold" style={{ color: 'var(--c-accent)' }}>{p.port}/{p.protocol}</span>
-                              <span style={{ color: 'var(--c-text-secondary)' }}>{p.service}</span>
-                              <span className="truncate max-w-[100px]" style={{ color: 'var(--c-text-muted)' }}>{p.version}</span>
-                            </li>
-                          ))}
-                          {openPorts.length > 8 && (
-                            <li className="text-xs" style={{ color: 'var(--c-text-muted)' }}>+{openPorts.length - 8} more…</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
+                <div className="pt-2">
+                  <button 
+                    onClick={() => setShowRaw(!showRaw)}
+                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest outline-none transition-colors"
+                    style={{ color: showRaw ? 'var(--c-accent)' : 'var(--c-text-muted)' }}
+                  >
+                    <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${showRaw ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                    </svg>
+                    View Raw Technical Data
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showRaw && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden"
+                      >
+                        {/* Open Ports Bento Grid */}
+                        {openPorts.length > 0 && (
+                          <div className="p-5 rounded-2xl flex flex-col" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-subtle)' }}>
+                            <p className="text-[9px] font-bold uppercase tracking-widest mb-4 flex items-center justify-between" style={{ color: 'var(--c-text-muted)' }}>
+                              <span>Open Ports</span>
+                              <span className="bg-white/10 px-2 py-0.5 rounded-full">{openPorts.length}</span>
+                            </p>
+                            <ul className="space-y-2 flex-1">
+                              {openPorts.slice(0, 8).map((p, idx) => (
+                                <li key={idx} className="flex justify-between items-center text-xs font-mono p-2 rounded-lg" style={{ background: 'var(--c-surface-2)' }}>
+                                  <span className="font-bold flex items-center gap-1.5" style={{ color: 'var(--c-accent)' }}>
+                                    <span className="w-1 h-1 rounded-full bg-cyan-400 opacity-50" />
+                                    {p.port}/{p.protocol}
+                                  </span>
+                                  <span className="text-right truncate max-w-[150px]" style={{ color: 'var(--c-text-secondary)' }}>
+                                    {p.service} <span className="opacity-50 text-[10px] ml-1">{p.version}</span>
+                                  </span>
+                                </li>
+                              ))}
+                              {openPorts.length > 8 && (
+                                <li className="text-[10px] font-mono text-center pt-2" style={{ color: 'var(--c-text-muted)' }}>+{openPorts.length - 8} more hidden</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
 
-                    {/* Web Vulnerabilities */}
-                    {webVulns.length > 0 && (
-                      <div className="p-4 rounded-xl" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--c-text-muted)' }}>
-                          Web Findings ({webVulns.filter(v => v.template_id !== 'nuclei-offline').length})
-                        </p>
-                        <ul className="space-y-2">
-                          {webVulns.slice(0, 5).map((v, idx) => (
-                            <li key={idx} className="text-xs space-y-0.5">
-                              <div className="flex justify-between">
-                                <span className="font-bold font-mono" style={{ color: v.severity === 'critical' || v.severity === 'high' ? '#f87171' : 'var(--c-purple)' }}>{v.template_id}</span>
-                                <span className="uppercase font-semibold text-[10px]" style={{ color: 'var(--c-text-muted)' }}>{v.severity}</span>
-                              </div>
-                              <p style={{ color: 'var(--c-text-secondary)' }}>{v.name}</p>
-                            </li>
-                          ))}
-                          {webVulns.length > 5 && (
-                            <li className="text-xs" style={{ color: 'var(--c-text-muted)' }}>+{webVulns.length - 5} more…</li>
-                          )}
-                        </ul>
-                      </div>
+                        {/* Web Vulnerabilities Bento Grid */}
+                        {webVulns.length > 0 && (
+                          <div className="p-5 rounded-2xl flex flex-col" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-subtle)' }}>
+                            <p className="text-[9px] font-bold uppercase tracking-widest mb-4 flex items-center justify-between" style={{ color: 'var(--c-text-muted)' }}>
+                              <span>Web Findings</span>
+                              <span className="bg-white/10 px-2 py-0.5 rounded-full">{webVulns.filter(v => v.template_id !== 'nuclei-offline').length}</span>
+                            </p>
+                            <ul className="space-y-2 flex-1">
+                              {webVulns.slice(0, 5).map((v, idx) => (
+                                <li key={idx} className="p-3 rounded-lg space-y-1.5" style={{ background: 'var(--c-surface-2)' }}>
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold font-mono text-[10px] truncate pr-2" style={{ color: v.severity === 'critical' || v.severity === 'high' ? '#f87171' : 'var(--c-purple)' }}>{v.template_id}</span>
+                                    <span className="uppercase font-bold text-[8px] tracking-widest px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--c-text-muted)' }}>{v.severity}</span>
+                                  </div>
+                                  <p className="text-[11px] leading-snug" style={{ color: 'var(--c-text-secondary)' }}>{v.name}</p>
+                                </li>
+                              ))}
+                              {webVulns.length > 5 && (
+                                <li className="text-[10px] font-mono text-center pt-2" style={{ color: 'var(--c-text-muted)' }}>+{webVulns.length - 5} more hidden</li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </motion.div>
                     )}
-                  </div>
-                </details>
+                  </AnimatePresence>
+                </div>
               )}
             </div>
           </motion.div>
@@ -320,6 +360,12 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   const [scanHistory, setScanHistory]         = useState([]);
   const [historyLoading, setHistoryLoading]   = useState(false);
   const [userProfile, setUserProfile]         = useState(null);
+
+  // Helper to ensure we never use an expired JWT token for backend requests
+  const getFreshToken = async () => {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || session?.access_token;
+  };
 
   const greeting     = getTimeGreeting();
   const displayName  = session?.user?.user_metadata?.first_name
@@ -346,9 +392,11 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     if (!session) return;
     const pingServer = async () => {
       try {
+        const token = await getFreshToken();
+        if (!token) return;
         await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/ping/', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
       } catch (err) {
         // Silently fail if ping fails
@@ -368,9 +416,10 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     setHistoryLoading(true);
     try {
       if (!session) return;
+      const token = await getFreshToken();
       const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/scan-history/', {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (response.ok) {
@@ -389,8 +438,9 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   const fetchProfile = useCallback(async () => {
     try {
       if (!session) return;
+      const token = await getFreshToken();
       const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/profile/', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -452,7 +502,8 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
     isDisplayingRef.current = false;
     if (eventSourceRef.current) eventSourceRef.current.close();
 
-    const url = `${(window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click')}/api/v1/scan/stream/?target=${encodeURIComponent(target.trim())}&engine=${selectedScanner}&token=${session?.access_token || ''}`;
+    const token = await getFreshToken();
+    const url = `${(window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click')}/api/v1/scan/stream/?target=${encodeURIComponent(target.trim())}&engine=${selectedScanner}&token=${token || ''}`;
     const source = new EventSource(url);
     eventSourceRef.current = source;
 
@@ -531,7 +582,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
             {greeting}, {displayName}.
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-            Your threat intelligence dashboard is standing by.
+            What would you like to scan today?
           </p>
         </div>
 
@@ -583,7 +634,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
             {/* AI Scan Credit Counter */}
             <div className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--c-text-primary)' }}>NEXA Scan Credits</h2>
+                <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--c-text-primary)' }}>Scan Credits</h2>
                 <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>Remaining scans available on your current plan.</p>
               </div>
               <div className="flex items-center gap-2">
@@ -600,7 +651,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
                 Select Diagnostic Engine
               </h2>
               <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
-                Choose the NEXA scanner module that fits your target.
+                Select the type of diagnostic you want to run.
               </p>
               <div className="space-y-3">
                 {SCANNER_OPTIONS.map(opt => (
@@ -678,10 +729,19 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
               <AnimatePresence>
                 {connectionError && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed overflow-hidden"
-                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed flex items-center gap-3 overflow-hidden backdrop-blur-md shadow-2xl"
+                    style={{ 
+                      background: 'rgba(11, 12, 16, 0.7)', 
+                      border: '1px solid rgba(248,113,113,0.3)', 
+                      boxShadow: 'inset 0 1px 0 rgba(248,113,113,0.2), 0 8px 32px rgba(248,113,113,0.1)',
+                      color: '#f87171' 
+                    }}
                   >
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" style={{ boxShadow: '0 0 8px #ef4444' }} />
                     {connectionError}
                   </motion.div>
                 )}
@@ -705,7 +765,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
                   className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7 space-y-4"
                 >
                   <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--c-border-subtle)' }}>
-                    <span className="text-sm font-semibold" style={{ color: 'var(--c-text-primary)' }}>Live Diagnostic Stream</span>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>Diagnostic Stream</span>
                     {isScanning && (
                       <span className="text-xs font-mono animate-pulse" style={{ color: 'var(--c-accent)' }}>NEXA Active</span>
                     )}
@@ -826,9 +886,39 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {scanHistory.map((record, i) => (
-                    <HistoryRow key={record.id} record={record} index={i} />
+                <div className="space-y-4">
+                  {Object.entries(
+                    scanHistory.reduce((acc, record) => {
+                      const d = new Date(record.created_at);
+                      // Group by Local Date string
+                      const dateKey = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                      
+                      // Pretty names for Today/Yesterday
+                      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                      const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                      
+                      let label = dateKey;
+                      if (dateKey === today) label = 'Today';
+                      else if (dateKey === yesterday) label = 'Yesterday';
+
+                      if (!acc[label]) acc[label] = [];
+                      acc[label].push(record);
+                      return acc;
+                    }, {})
+                  ).map(([dateLabel, records]) => (
+                    <div key={dateLabel} className="space-y-3">
+                      {/* Date Separator */}
+                      <div className="flex items-center gap-4 py-3">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" style={{ opacity: 0.5 }} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>{dateLabel}</span>
+                        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/10 to-transparent" style={{ opacity: 0.5 }} />
+                      </div>
+                      
+                      {/* Records for this date */}
+                      {records.map((record, i) => (
+                        <HistoryRow key={record.id} record={record} index={i} />
+                      ))}
+                    </div>
                   ))}
                 </div>
               )}

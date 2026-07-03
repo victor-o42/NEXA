@@ -4,6 +4,7 @@ import socket
 import time
 from concurrent.futures import ThreadPoolExecutor
 import nmap
+from typing import Any
 
 # Standard ports that give a baseline view of a target's exposed perimeter.
 COMMON_PORTS = {
@@ -82,7 +83,7 @@ def run_port_scan(target: str, ports_to_scan: list[int] | None = None) -> dict:
     start_time = time.time()
     ports = ports_to_scan or list(COMMON_PORTS.keys())
     
-    scan_meta = {
+    scan_meta: dict[str, Any] = {
         "target": target,
         "resolved_ip": None,
         "status": "completed",

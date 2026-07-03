@@ -118,7 +118,7 @@ class ScanStreamView(APIView):
 
             # ── Rule 1: Self-Scan Awareness Routine ──────────────────────────────
             self_scan_domains = ["nexa-scan.click", "localhost", "127.0.0.1", "staging.nexa-scan.click"]
-            if any(domain in clean_host for domain in self_scan_domains):
+            if any(clean_host == domain or clean_host.endswith('.' + domain) for domain in self_scan_domains):
                 # Fake a real scan stream for immersion
                 time.sleep(1.0)
                 yield f"data: {json.dumps({'status': 'running', 'message': f'Resolving target: {clean_host}...'})}\n\n"
@@ -134,13 +134,7 @@ class ScanStreamView(APIView):
                     "verdict_explanation": "Scanning NEXA itself? Bold move. Internal confidence check complete — all shields active.",
                     "risk_overview": {"Critical": 0, "High": 0, "Medium": 0, "Low": 0, "Info": 1},
                     "nexa_summary": "I see what you did there... You tried to run a diagnostic on my own architecture. While I appreciate the curiosity, my internal shields are fully active and hardened. I'm operating at peak efficiency. Let's redirect this firepower to a real external target.",
-                    "findings": [{
-                        "title": "Self-Scan Attempt Detected",
-                        "risk_level": "Info",
-                        "why_it_matters": "Shows healthy curiosity from the operator.",
-                        "potential_impact": "Slight ego boost for the NEXA internal defense systems.",
-                        "recommended_fix": "No remediation required. Redirect diagnostic to external domains."
-                    }],
+                    "findings": [],
                     "recommendations": ["Run a diagnostic on an external domain to see actual vulnerabilities."],
                     "technical_details": "Self-scan blocked by internal firewall rules."
                 }

@@ -34,7 +34,7 @@ def run_nexa_orchestrator(target: str, engine: str = 'port', original_url: str |
 
     # Rule 1: Self-Scan Easter Egg still lives here as a safety net
     self_scan_domains = ["nexa-scan.click", "localhost", "127.0.0.1", "staging.nexa-scan.click"]
-    if any(domain in clean_target for domain in self_scan_domains):
+    if any(clean_target == domain or clean_target.endswith('.' + domain) for domain in self_scan_domains):
         return {
             "target": target,
             "status": "blocked",
