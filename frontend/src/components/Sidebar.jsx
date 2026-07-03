@@ -200,26 +200,33 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   return (
     <>
       {/* ── MOBILE LAYOUT (< md) ── */}
-      <div className="flex md:hidden glass-container rounded-2xl p-3 items-center justify-between select-none fixed top-4 left-4 right-4 z-40" style={{ backdropFilter: 'blur(16px)' }}>
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        className="flex md:hidden glass-panel rounded-full p-2 pl-4 pr-2 items-center justify-between select-none fixed top-4 left-4 right-4 z-40" 
+        style={{ backdropFilter: 'blur(24px) saturate(180%)', border: '1px solid var(--c-border)' }}
+      >
         {/* Logo & Hamburger */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-1 outline-none text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+            className="p-1.5 outline-none rounded-full transition-colors"
+            style={{ color: 'var(--c-text-primary)' }}
           >
-            <MenuIcon size={22} />
+            <MenuIcon size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <img src={logo} alt="NEXA" className="h-7 w-auto object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(0,242,254,0.5))' }} />
+            <img src={logo} alt="NEXA" className="h-6 w-auto object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(0,242,254,0.5))' }} />
             <span className="text-sm font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
           </div>
         </div>
 
         {/* Theme toggle & Profile */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsDark(p => !p)}
-            className="w-14 h-8 rounded-full outline-none flex items-center justify-center theme-toggle-pill cursor-pointer flex-shrink-0"
+            className="w-12 h-8 rounded-full outline-none flex items-center justify-center theme-toggle-pill cursor-pointer flex-shrink-0"
             aria-label="Toggle theme"
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -231,7 +238,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                   exit={{ y: 20, opacity: 0, rotate: 90 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <MoonIcon size={16} className="neon-moon-icon" />
+                  <MoonIcon size={14} className="neon-moon-icon" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -241,18 +248,18 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                   exit={{ y: -20, opacity: 0, rotate: -90 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <SunIcon size={16} className="neon-moon-icon" />
+                  <SunIcon size={14} className="neon-moon-icon" />
                 </motion.div>
               )}
             </AnimatePresence>
           </button>
           {userProfile && (
-             <div onClick={() => setActiveTab('profile')} className="cursor-pointer">
+             <motion.div whileTap={{ scale: 0.95 }} onClick={() => setActiveTab('profile')} className="cursor-pointer">
                <UserAvatar size={8} />
-             </div>
+             </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Spacer for mobile fixed header */}
       <div className="md:hidden h-16 w-full shrink-0" />

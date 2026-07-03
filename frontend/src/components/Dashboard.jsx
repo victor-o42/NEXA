@@ -625,201 +625,186 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
         {activeTab === 'scanner' && (
           <motion.div
             key="scanner-view"
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-4 sm:space-y-5"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
+            className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 lg:gap-6"
           >
-            {/* AI Scan Credit Counter */}
-            <div className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--c-text-primary)' }}>Scan Credits</h2>
-                <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>Remaining scans available on your current plan.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-wider" style={{ color: 'var(--c-text-muted)' }}>REMAINING:</span>
-                <div className="px-4 py-2 rounded-xl text-lg font-black" style={{ background: 'var(--c-surface-2)', color: 'var(--c-accent)' }}>
-                  {userProfile ? (userProfile.is_admin ? 'Unlimited' : userProfile.max_scans - userProfile.scans_used) : '...'}
+            {/* LEFT COLUMN: Main Stage (col-span-8) */}
+            <div className="xl:col-span-8 flex flex-col gap-4 sm:gap-5 lg:gap-6">
+              
+              {/* Target input (Double Bezel) */}
+              <div className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]">
+                <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-5 sm:p-8 relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+                  <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full pointer-events-none"
+                    style={{ background: 'var(--c-accent-dim)', filter: 'blur(70px)' }} />
+                  
+                  <h2 className="text-lg sm:text-xl font-bold mb-1 tracking-tight" style={{ color: 'var(--c-text-primary)' }}>
+                    New Security Scan
+                  </h2>
+                  <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: 'var(--c-text-secondary)' }}>
+                    Enter a domain, URL, or IP address to begin diagnostics.
+                  </p>
+                  
+                  <form onSubmit={handleStartScan} className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="e.g. example.com, https://example.com"
+                      value={target}
+                      onChange={e => setTarget(e.target.value)}
+                      disabled={isScanning}
+                      className="glass-input flex-1 px-5 py-4 rounded-2xl text-sm font-mono transition-all duration-300 disabled:opacity-50"
+                      style={{ caretColor: 'var(--c-accent)' }}
+                    />
+                    <motion.button
+                      type="submit"
+                      disabled={isScanning || (userProfile && !userProfile.is_admin && userProfile.scans_used >= userProfile.max_scans)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      className="px-8 py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap shadow-xl"
+                      style={{
+                        background: 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)',
+                        color: '#0B0C10',
+                        boxShadow: '0 8px 24px rgba(0,242,254,0.3), inset 0 1px 1px rgba(255,255,255,0.4)',
+                      }}
+                    >
+                      {isScanning ? (
+                        <>
+                          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+                            style={{ borderColor: 'rgba(11,12,16,0.4)', borderTopColor: 'transparent' }} />
+                          <span>Scanning...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Trigger Diagnostic</span>
+                          <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </>
+                      )}
+                    </motion.button>
+                  </form>
+
+                  <AnimatePresence mode="popLayout">
+                    {connectionError && (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed flex items-center gap-3 overflow-hidden backdrop-blur-md shadow-2xl"
+                        style={{ 
+                          background: 'rgba(11, 12, 16, 0.7)', 
+                          border: '1px solid rgba(248,113,113,0.3)', 
+                          boxShadow: 'inset 0 1px 0 rgba(248,113,113,0.2), 0 8px 32px rgba(248,113,113,0.1)',
+                          color: '#f87171' 
+                        }}
+                      >
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" style={{ boxShadow: '0 0 8px #ef4444' }} />
+                        {connectionError}
+                      </motion.div>
+                    )}
+                    {selfScanMessage && (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: -10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                        className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed overflow-hidden"
+                        style={{ background: 'var(--c-accent-dim)', border: '1px solid var(--c-border-accent)', color: 'var(--c-accent)' }}
+                      >
+                        {selfScanMessage}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
-            </div>
 
-            {/* Engine selector */}
-            <div className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7">
-              <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--c-text-primary)' }}>
-                Select Diagnostic Engine
-              </h2>
-              <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
-                Select the type of diagnostic you want to run.
-              </p>
-              <div className="space-y-3">
-                {SCANNER_OPTIONS.map(opt => (
-                  <ScannerOption
-                    key={opt.key}
-                    id={opt.id}
-                    label={opt.label}
-                    description={opt.description}
-                    icon={opt.icon}
-                    hoverColor={opt.hoverColor}
-                    selected={selectedScanner === opt.key}
-                    onClick={() => setSelectedScanner(opt.key)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Target input */}
-            <div className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7 relative overflow-hidden">
-              <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'var(--c-accent-dim)', filter: 'blur(60px)' }} />
-              <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--c-text-primary)' }}>
-                New Security Scan
-              </h2>
-              <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
-                Enter a domain, URL, or IP address.
-              </p>
-              <form onSubmit={handleStartScan} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  placeholder="e.g. example.com, https://example.com, or 192.168.1.1"
-                  value={target}
-                  onChange={e => setTarget(e.target.value)}
-                  disabled={isScanning}
-                  className="flex-1 px-5 py-4 rounded-2xl text-sm font-mono outline-none transition-all duration-200 disabled:opacity-50"
-                  style={{
-                    background: 'var(--c-input-bg)',
-                    border: '1px solid var(--c-input-border)',
-                    color: 'var(--c-input-color)',
-                    caretColor: 'var(--c-accent)',
-                  }}
-                  onFocus={e => { e.target.style.borderColor = 'var(--c-accent)'; e.target.style.boxShadow = '0 0 0 3px var(--c-accent-dim)'; }}
-                  onBlur={e  => { e.target.style.borderColor = 'var(--c-input-border)'; e.target.style.boxShadow = 'none'; }}
-                />
-                <motion.button
-                  type="submit"
-                  disabled={isScanning || (userProfile && !userProfile.is_admin && userProfile.scans_used >= userProfile.max_scans)}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                  className="px-7 py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap"
-                  style={{
-                    background: 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)',
-                    color: '#0B0C10',
-                    boxShadow: '0 0 24px rgba(0,242,254,0.25)',
-                  }}
-                >
-                  {isScanning ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-                        style={{ borderColor: 'rgba(11,12,16,0.4)', borderTopColor: 'transparent' }} />
-                      <span>Scanning...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>Trigger Diagnostic</span>
-                    </>
-                  )}
-                </motion.button>
-              </form>
-
-              <AnimatePresence>
-                {connectionError && (
+              {/* Live scan stream (Double Bezel) */}
+              <AnimatePresence mode="wait">
+                {streamMessages.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed flex items-center gap-3 overflow-hidden backdrop-blur-md shadow-2xl"
-                    style={{ 
-                      background: 'rgba(11, 12, 16, 0.7)', 
-                      border: '1px solid rgba(248,113,113,0.3)', 
-                      boxShadow: 'inset 0 1px 0 rgba(248,113,113,0.2), 0 8px 32px rgba(248,113,113,0.1)',
-                      color: '#f87171' 
-                    }}
+                    layout
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]"
                   >
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" style={{ boxShadow: '0 0 8px #ef4444' }} />
-                    {connectionError}
-                  </motion.div>
-                )}
-                {selfScanMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    className="mt-5 p-4 rounded-2xl font-mono text-xs leading-relaxed overflow-hidden"
-                    style={{ background: 'var(--c-accent-dim)', border: '1px solid var(--c-border-accent)', color: 'var(--c-accent)' }}
-                  >
-                    {selfScanMessage}
+                    <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-5 sm:p-7 space-y-4" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+                      <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--c-border-subtle)' }}>
+                        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>Diagnostic Stream</span>
+                        {isScanning && (
+                          <span className="text-xs font-mono animate-pulse" style={{ color: 'var(--c-accent)' }}>NEXA Active</span>
+                        )}
+                      </div>
+                      <div className="space-y-3 font-mono text-xs max-h-[400px] overflow-y-auto pr-2">
+                        <AnimatePresence mode="popLayout">
+                          {streamMessages.map((msg, idx) => {
+                            const isNotice    = msg.type === 'notice';
+                            const isCompleted = msg.type === 'completed';
+                            const isError     = msg.type === 'error';
+                            return (
+                              <motion.div
+                                layout
+                                key={idx}
+                                initial={{ opacity: 0, x: -10, scale: 0.98 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                className="flex items-start gap-3"
+                                style={isNotice ? {
+                                  background: 'rgba(251,191,36,0.07)',
+                                  border: '1px solid rgba(251,191,36,0.2)',
+                                  borderRadius: '0.75rem', padding: '0.75rem',
+                                } : {}}
+                              >
+                                {/* Premium SVG icon per message type */}
+                                <span className="flex-shrink-0 mt-0.5" style={{
+                                  color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fbbf24' : 'var(--c-accent)',
+                                }}>
+                                  {isCompleted && (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  )}
+                                  {isError && (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <line x1="18" y1="6" x2="6" y2="18" />
+                                      <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                  )}
+                                  {isNotice && (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <circle cx="12" cy="12" r="10" />
+                                      <line x1="12" y1="8" x2="12" y2="12" />
+                                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                  )}
+                                  {!isCompleted && !isError && !isNotice && (
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="9 18 15 12 9 6" />
+                                    </svg>
+                                  )}
+                                </span>
+                                <span className="leading-relaxed break-all" style={{ color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fde047' : 'var(--c-text-primary)' }}>
+                                  {msg.text}
+                                </span>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                        <div ref={logsEndRef} />
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Live scan stream */}
-            <AnimatePresence>
-              {streamMessages.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
-                  className="glass-container rounded-2xl sm:rounded-3xl p-5 sm:p-7 space-y-4"
-                >
-                  <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--c-border-subtle)' }}>
-                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>Diagnostic Stream</span>
-                    {isScanning && (
-                      <span className="text-xs font-mono animate-pulse" style={{ color: 'var(--c-accent)' }}>NEXA Active</span>
-                    )}
-                  </div>
-                  <div className="space-y-3 font-mono text-xs max-h-[400px] overflow-y-auto pr-2">
-                    <AnimatePresence>
-                      {streamMessages.map((msg, idx) => {
-                        const isNotice    = msg.type === 'notice';
-                        const isCompleted = msg.type === 'completed';
-                        const isError     = msg.type === 'error';
-                        return (
-                          <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.28, ease: 'easeOut' }}
-                            className="flex items-start gap-3"
-                            style={isNotice ? {
-                              background: 'rgba(251,191,36,0.07)',
-                              border: '1px solid rgba(251,191,36,0.2)',
-                              borderRadius: '0.75rem', padding: '0.75rem',
-                            } : {}}
-                          >
-                            {/* Premium SVG icon per message type */}
-                            <span className="flex-shrink-0 mt-0.5" style={{
-                              color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fbbf24' : 'var(--c-accent)',
-                            }}>
-                              {isCompleted && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              )}
-                              {isError && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <line x1="15" y1="9" x2="9" y2="15" />
-                                  <line x1="9" y1="9" x2="15" y2="15" />
-                                </svg>
-                              )}
-                              {isNotice && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <line x1="12" y1="8" x2="12" y2="12" />
-                                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                                </svg>
-                              )}
-                              {!isCompleted && !isError && !isNotice && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="9 18 15 12 9 6" />
-                                </svg>
-                              )}
-                            </span>
-                            <span style={{
-                              color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fbbf24' : 'var(--c-text-secondary)',
                               lineHeight: 1.6,
                             }}>
                               {msg.text}

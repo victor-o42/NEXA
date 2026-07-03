@@ -131,7 +131,7 @@ function App() {
       >
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        <main className="flex-1 overflow-y-auto md:max-h-[calc(100vh-3rem)] min-w-0">
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-0 md:max-h-[calc(100vh-3rem)] min-w-0">
           <Dashboard
             activeTab={activeTab}
             setActiveTab={setActiveTab}
