@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import ScanResults from './ScanResults';
 import PersonalInfo from './PersonalInfo';
@@ -81,7 +82,10 @@ const SCANNER_OPTIONS = [
     hoverColor: 'var(--c-accent)',
     icon: (
       <svg className="w-5 h-5" style={{ color: 'var(--c-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12H17M3 12H7" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21V17M12 3V7" />
+        <circle cx="12" cy="12" r="3" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="9" strokeWidth="1.25" strokeDasharray="3 3" />
       </svg>
     ),
   },
@@ -92,7 +96,9 @@ const SCANNER_OPTIONS = [
     hoverColor: 'var(--c-accent)',
     icon: (
       <svg className="w-5 h-5" style={{ color: 'var(--c-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 2L3 7l9 5 9-5-9-5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l9 5 9-5" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 17l9 5 9-5" />
       </svg>
     ),
   },
@@ -347,7 +353,10 @@ function HistoryRow({ record, index }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-export default function Dashboard({ activeTab, setActiveTab, session }) {
+export default function Dashboard({ session }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = location.pathname.split('/').pop() || 'scanner';
   const [target, setTarget]                   = useState('');
   const [selectedScanner, setSelectedScanner] = useState('port');
   const [isScanning, setIsScanning]           = useState(false);
@@ -459,7 +468,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
         const row = payload.new;
         if (row?.status === 'COMPLETED') {
           setScanResult(row);
-          if (setActiveTab) setActiveTab('results');
+          navigate('results');
           setIsScanning(false);
           // Refresh history and profile to include the new record and updated quota
           fetchHistory();
@@ -476,7 +485,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
       supabase.removeChannel(channel);
       if (eventSourceRef.current) eventSourceRef.current.close();
     };
-  }, [setActiveTab, fetchHistory]);
+  }, [navigate, fetchHistory]);
 
   // Also reload history whenever user navigates to the history tab
   useEffect(() => {
@@ -531,7 +540,7 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
             results:     data.scan_results,
             explanation: data.ai_summary || '',
           });
-          if (setActiveTab) setTimeout(() => setActiveTab('results'), 1200); // small delay to let user see "completed" state before jumping
+          setTimeout(() => navigate('results'), 1200); // small delay to let user see "completed" state before jumping
         }
         setIsScanning(false);
         source.close();
@@ -573,66 +582,108 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
   return (
     <div className="flex-1 flex flex-col space-y-4 sm:space-y-5 md:space-y-6">
 
-      {/* ── Welcome Bar ── */}
-      <div className="flex flex-wrap justify-between items-center gap-4 glass-container rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden">
-        <div className="absolute -left-10 -top-10 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, var(--c-accent-dim) 0%, transparent 70%)' }} />
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: 'var(--c-text-primary)' }}>
-            {greeting}, {displayName}.
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-            What would you like to scan today?
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-2xl"
-            style={{ background: 'var(--c-badge-bg)', border: '1px solid var(--c-badge-border)' }}>
-            <div className="w-2 h-2 rounded-full animate-pulse"
-              style={{ background: 'var(--c-accent)', boxShadow: '0 0 8px var(--c-accent)' }} />
-            <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: 'var(--c-accent)' }}>
-              System Secured
-            </span>
+      {/* ── Welcome Bar (Double Bezel) ── */}
+      <div className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]">
+        <div className="flex flex-wrap justify-between items-center gap-4 rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-5 sm:p-7 relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+          <div className="absolute -left-10 -top-10 w-48 h-48 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, var(--c-accent-dim) 0%, transparent 70%)' }} />
+          <div className="relative z-10">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: 'var(--c-text-primary)' }}>
+              {greeting}, {displayName}.
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+              What would you like to scan today?
+            </p>
           </div>
-          <motion.button
-            id="signout-btn"
-            onClick={() => supabase.auth.signOut()}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.93 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-            className="w-10 h-10 rounded-full flex items-center justify-center outline-none"
-            style={{ background: 'var(--c-icon-btn-bg)', border: '1px solid var(--c-icon-btn-border)' }}
-            aria-label="Sign out" title="Sign out"
-          >
-            <svg className="w-4 h-4" style={{ color: 'var(--c-icon-color)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </motion.button>
+
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-2xl"
+              style={{ background: 'var(--c-badge-bg)', border: '1px solid var(--c-badge-border)' }}>
+              <div className="w-2 h-2 rounded-full animate-pulse"
+                style={{ background: 'var(--c-accent)', boxShadow: '0 0 8px var(--c-accent)' }} />
+              <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: 'var(--c-accent)' }}>
+                System Secured
+              </span>
+            </div>
+            <motion.button
+              id="signout-btn"
+              onClick={() => supabase.auth.signOut()}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.93 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              className="w-10 h-10 rounded-full flex items-center justify-center outline-none"
+              style={{ background: 'var(--c-icon-btn-bg)', border: '1px solid var(--c-icon-btn-border)' }}
+              aria-label="Sign out" title="Sign out"
+            >
+              <svg className="w-4 h-4" style={{ color: 'var(--c-icon-color)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </motion.button>
+          </div>
         </div>
       </div>
 
       {/* ── Tab content ── */}
       <AnimatePresence mode="wait">
-
-        {activeTab === 'results' && <ScanResults scanResult={scanResult} />}
-        {activeTab === 'profile' && <PersonalInfo session={session} />}
-        {activeTab === 'notifications' && <Notifications />}
-        {activeTab === 'login_history' && <LoginHistory />}
-        {activeTab === 'admin' && <AdminDashboard />}
-
-        {/* SCANNER TAB */}
-        {activeTab === 'scanner' && (
+        <Routes location={location} key={location.pathname}>
+          <Route path="results" element={<ScanResults scanResult={scanResult} />} />
+          <Route path="profile" element={<PersonalInfo session={session} />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="login_history" element={<LoginHistory />} />
+          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="*" element={<Navigate to="scanner" replace />} />
+          <Route path="scanner" element={
           <motion.div
             key="scanner-view"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
-            className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 lg:gap-6"
+            className="space-y-4 sm:space-y-5"
           >
-            {/* LEFT COLUMN: Main Stage (col-span-8) */}
-            <div className="xl:col-span-8 flex flex-col gap-4 sm:gap-5 lg:gap-6">
+            {/* AI Scan Credit Counter (Double Bezel) */}
+            <div className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]">
+              <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+                <div>
+                  <h2 className="text-base font-bold mb-1 tracking-tight" style={{ color: 'var(--c-text-primary)' }}>Scan Credits</h2>
+                  <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>Remaining scans on your plan.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold tracking-wider" style={{ color: 'var(--c-text-muted)' }}>REMAINING</span>
+                  <div className="px-4 py-2 rounded-xl text-sm font-black shadow-inner" style={{ background: 'var(--c-surface-2)', color: 'var(--c-accent)' }}>
+                    {userProfile ? (userProfile.is_admin ? 'Unlimited' : userProfile.max_scans - userProfile.scans_used) : '...'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Engine selector (Double Bezel) */}
+            <div className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]">
+              <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-5 sm:p-7" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+                <h2 className="text-base font-bold mb-1 tracking-tight" style={{ color: 'var(--c-text-primary)' }}>
+                  Diagnostic Engine
+                </h2>
+                <p className="text-xs mb-6" style={{ color: 'var(--c-text-secondary)' }}>
+                  Select the type of diagnostic tool to run against the target.
+                </p>
+                <div className="space-y-3">
+                  {SCANNER_OPTIONS.map(opt => (
+                    <ScannerOption
+                      key={opt.key}
+                      id={opt.id}
+                      label={opt.label}
+                      description={opt.description}
+                      icon={opt.icon}
+                      hoverColor={opt.hoverColor}
+                      selected={selectedScanner === opt.key}
+                      onClick={() => setSelectedScanner(opt.key)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 sm:gap-5 lg:gap-6">
               
               {/* Target input (Double Bezel) */}
               <div className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]">
@@ -805,24 +856,11 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
               </AnimatePresence>
             </div>
 
-                              lineHeight: 1.6,
-                            }}>
-                              {msg.text}
-                            </span>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                    <div ref={logsEndRef} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
-        )}
+          } />
 
         {/* HISTORY TAB */}
-        {activeTab === 'history' && (
+        <Route path="history" element={
           <motion.div
             key="history-view"
             initial={{ opacity: 0, y: 14 }}
@@ -909,8 +947,8 @@ export default function Dashboard({ activeTab, setActiveTab, session }) {
               )}
             </div>
           </motion.div>
-        )}
-
+        } />
+        </Routes>
       </AnimatePresence>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/nexa_logo.png';
 
@@ -9,14 +10,14 @@ function SunIcon({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1"  x2="12" y2="3" />
+      <line x1="12" y1="1" x2="12" y2="3" />
       <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22"  x2="5.64" y2="5.64" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
       <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1"  y1="12" x2="3"  y2="12" />
+      <line x1="1" y1="12" x2="3" y2="12" />
       <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36" />
-      <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
     </svg>
   );
 }
@@ -102,7 +103,11 @@ const NAV_ITEMS = [
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export default function Sidebar({ activeTab, setActiveTab }) {
+export default function Sidebar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = location.pathname.split('/').pop() || 'scanner';
+
   const [isDark, setIsDark] = useState(() => {
     try { return localStorage.getItem('nexa-theme') !== 'light'; }
     catch { return true; }
@@ -152,7 +157,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   useEffect(() => {
     const root = document.documentElement;
     isDark ? root.classList.add('dark') : root.classList.remove('dark');
-    try { localStorage.setItem('nexa-theme', isDark ? 'dark' : 'light'); } catch {}
+    try { localStorage.setItem('nexa-theme', isDark ? 'dark' : 'light'); } catch { }
   }, [isDark]);
 
   const handleSignOut = async () => {
@@ -184,7 +189,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
         {expand && (
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
-              {userProfile?.user_metadata?.first_name 
+              {userProfile?.user_metadata?.first_name
                 ? `${userProfile.user_metadata.first_name} ${userProfile.user_metadata.last_name || ''}`
                 : firstName}
             </span>
@@ -200,11 +205,11 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   return (
     <>
       {/* ── MOBILE LAYOUT (< md) ── */}
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        className="flex md:hidden glass-panel rounded-full p-2 pl-4 pr-2 items-center justify-between select-none fixed top-4 left-4 right-4 z-40" 
+        className="flex md:hidden glass-panel rounded-full p-2 pl-4 pr-2 items-center justify-between select-none fixed top-4 left-4 right-4 z-40"
         style={{ backdropFilter: 'blur(24px) saturate(180%)', border: '1px solid var(--c-border)' }}
       >
         {/* Logo & Hamburger */}
@@ -254,9 +259,9 @@ export default function Sidebar({ activeTab, setActiveTab }) {
             </AnimatePresence>
           </button>
           {userProfile && (
-             <motion.div whileTap={{ scale: 0.95 }} onClick={() => setActiveTab('profile')} className="cursor-pointer">
-               <UserAvatar size={8} />
-             </motion.div>
+            <motion.div whileTap={{ scale: 0.95 }} onClick={() => navigate('/dashboard/profile')} className="cursor-pointer">
+              <UserAvatar size={8} />
+            </motion.div>
           )}
         </div>
       </motion.div>
@@ -295,7 +300,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                   <motion.button
                     key={`mob-${item.id}`}
                     onClick={() => {
-                      setActiveTab(item.id);
+                      navigate(`/dashboard/${item.id}`);
                       setMobileMenuOpen(false);
                     }}
                     whileTap={{ scale: 0.96 }}
@@ -323,7 +328,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                     <UserAvatar size={10} expand={false} />
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="text-sm font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
-                        {userProfile?.user_metadata?.first_name 
+                        {userProfile?.user_metadata?.first_name
                           ? `${userProfile.user_metadata.first_name} ${userProfile.user_metadata.last_name || ''}`
                           : userProfile?.user_metadata?.full_name || userProfile?.email?.split('@')[0]}
                       </span>
@@ -332,10 +337,10 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                       </span>
                     </div>
                   </div>
-                  
+
                   {(userProfile?.user_metadata?.is_admin || djangoProfile?.is_admin) && (
                     <motion.button
-                      onClick={() => { setActiveTab('admin'); setMobileMenuOpen(false); }}
+                      onClick={() => { navigate('/dashboard/admin'); setMobileMenuOpen(false); }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold"
                       style={{
@@ -366,122 +371,129 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       </AnimatePresence>
 
       {/* ── DESKTOP LAYOUT (≥ md) ── */}
-      <div className="hidden md:flex w-64 lg:w-72 flex-shrink-0 flex-col glass-container rounded-3xl p-5 lg:p-6 select-none min-h-[calc(100vh-3rem)] sticky top-6">
-        
-        {/* Brand and Theme Toggle */}
-        <div className="flex items-center justify-between mb-8 px-1 mt-1">
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="NEXA"
-              className="h-9 w-auto object-contain hover:scale-105 transition-transform duration-300"
-              style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
-            />
-            <span className="text-lg font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
-          </div>
-          <button
-            onClick={() => setIsDark(p => !p)}
-            className="w-14 h-8 rounded-full outline-none flex items-center justify-center theme-toggle-pill cursor-pointer flex-shrink-0"
-            aria-label="Toggle theme"
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              {isDark ? (
-                <motion.div
-                  key="moon"
-                  initial={{ y: -20, opacity: 0, rotate: -90 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  exit={{ y: 20, opacity: 0, rotate: 90 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                >
-                  <MoonIcon size={18} className="neon-moon-icon" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="sun"
-                  initial={{ y: 20, opacity: 0, rotate: 90 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  exit={{ y: -20, opacity: 0, rotate: -90 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                >
-                  <SunIcon size={18} className="neon-moon-icon" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
-        </div>
+      <div className="hidden md:flex w-64 lg:w-72 flex-shrink-0 flex-col glass-panel rounded-[2.5rem] p-1.5 sm:p-2 select-none min-h-[calc(100vh-3rem)] sticky top-6 z-10">
+        <div className="flex-1 flex flex-col rounded-[calc(2.5rem-0.5rem)] p-4 lg:p-5 relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+          {/* Ambient inner glow */}
+          <div className="absolute -left-20 -top-20 w-64 h-64 rounded-full pointer-events-none"
+            style={{ background: 'var(--c-accent-dim)', filter: 'blur(60px)', opacity: 0.5 }} />
 
-        {/* Navigation */}
-        <nav className="space-y-1.5 mb-6">
-          {NAV_ITEMS.map(item => {
-            const isActive = activeTab === item.id;
-            return (
-              <motion.button
-                key={`desk-${item.id}`}
-                onClick={() => setActiveTab(item.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl relative text-sm font-medium transition-colors duration-150 outline-none"
-                style={{ color: isActive ? '#0B0C10' : 'var(--c-text-muted)' }}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="desktopActiveNav"
-                    className="absolute inset-0 rounded-2xl -z-10"
-                    style={{
-                      background: 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)',
-                      boxShadow: '0 0 22px rgba(0,242,254,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
-                    }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 32, mass: 0.8 }}
-                  />
-                )}
-                <span className="relative z-10">{item.icon}</span>
-                <span className="relative z-10">{item.label}</span>
-              </motion.button>
-            );
-          })}
-        </nav>
-
-        <div className="flex-1" />
-
-        {/* User Profile / Status Card */}
-        {userProfile && (
-          <div className="mt-auto p-4 rounded-3xl" style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)' }}>
+          {/* Brand and Theme Toggle */}
+          <div className="flex items-center justify-between mb-8 px-1 mt-1">
             <div className="flex items-center gap-3">
-              <UserAvatar size={10} expand={false} />
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
-                  {userProfile?.user_metadata?.first_name 
-                    ? `${userProfile.user_metadata.first_name} ${userProfile.user_metadata.last_name || ''}`
-                    : userProfile?.user_metadata?.full_name || userProfile?.email?.split('@')[0]}
-                </span>
-                <span className="text-xs font-mono truncate" style={{ color: 'var(--c-text-secondary)' }}>
-                  {userProfile?.email}
-                </span>
+              <img
+                src={logo}
+                alt="NEXA"
+                className="h-9 w-auto object-contain hover:scale-105 transition-transform duration-300"
+                style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
+              />
+              <span className="text-lg font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+            </div>
+            <button
+              onClick={() => setIsDark(p => !p)}
+              className="w-14 h-8 rounded-full outline-none flex items-center justify-center theme-toggle-pill cursor-pointer flex-shrink-0"
+              aria-label="Toggle theme"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {isDark ? (
+                  <motion.div
+                    key="moon"
+                    initial={{ y: -20, opacity: 0, rotate: -90 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: 20, opacity: 0, rotate: 90 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <MoonIcon size={18} className="neon-moon-icon" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="sun"
+                    initial={{ y: 20, opacity: 0, rotate: 90 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: -20, opacity: 0, rotate: -90 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <SunIcon size={18} className="neon-moon-icon" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="space-y-1.5 mb-6">
+            {NAV_ITEMS.map(item => {
+              const isActive = activeTab === item.id;
+              return (
+                <motion.button
+                  key={`desk-${item.id}`}
+                  onClick={() => navigate(`/dashboard/${item.id}`)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                  className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl relative text-sm font-medium transition-colors duration-150 outline-none"
+                  style={{ color: isActive ? '#0B0C10' : 'var(--c-text-muted)' }}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="desktopActiveNav"
+                      className="absolute inset-0 rounded-2xl -z-10"
+                      style={{
+                        background: 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)',
+                        boxShadow: '0 4px 14px rgba(0,242,254,0.4), inset 0 2px 4px rgba(255,255,255,0.5)',
+                      }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 32, mass: 0.8 }}
+                    />
+                  )}
+                  <span className="relative z-10">{item.icon}</span>
+                  <span className="relative z-10">{item.label}</span>
+                </motion.button>
+              );
+            })}
+          </nav>
+
+          <div className="flex-1" />
+
+          {/* User Profile / Status Card (Double Bezel) */}
+          {userProfile && (
+            <div className="mt-auto p-1.5 rounded-[1.5rem] glass-panel relative z-10">
+              <div className="rounded-[calc(1.5rem-0.375rem)] p-4 flex flex-col" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
+                <div className="flex items-center gap-3">
+                  <UserAvatar size={10} expand={false} />
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-bold truncate" style={{ color: 'var(--c-text-primary)' }}>
+                      {userProfile?.user_metadata?.first_name
+                        ? `${userProfile.user_metadata.first_name} ${userProfile.user_metadata.last_name || ''}`
+                        : userProfile?.user_metadata?.full_name || userProfile?.email?.split('@')[0]}
+                    </span>
+                    <span className="text-xs font-mono truncate" style={{ color: 'var(--c-text-secondary)' }}>
+                      {userProfile?.email}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Conditional Admin Link */}
+                {(userProfile?.user_metadata?.is_admin || djangoProfile?.is_admin) && (
+                  <motion.button
+                    onClick={() => navigate('/dashboard/admin')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-colors shadow-lg"
+                    style={{
+                      background: activeTab === 'admin' ? 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)' : 'rgba(168, 85, 247, 0.1)',
+                      color: activeTab === 'admin' ? '#0B0C10' : '#a855f7',
+                      border: `1px solid ${activeTab === 'admin' ? 'transparent' : 'rgba(168, 85, 247, 0.2)'}`
+                    }}
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4l-8 4v7c0 4.418 3.582 8 8 8s8-3.582 8-8V8l-8-4z" />
+                    </svg>
+                    Admin Console
+                  </motion.button>
+                )}
               </div>
             </div>
-            
-            {/* Conditional Admin Link */}
-            {(userProfile?.user_metadata?.is_admin || djangoProfile?.is_admin) && (
-              <motion.button
-                onClick={() => setActiveTab('admin')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-colors"
-                style={{
-                  background: activeTab === 'admin' ? 'var(--c-opt-selected-bg)' : 'rgba(168, 85, 247, 0.1)',
-                  color: activeTab === 'admin' ? 'var(--c-accent)' : '#a855f7',
-                  border: `1px solid ${activeTab === 'admin' ? 'var(--c-accent)' : 'rgba(168, 85, 247, 0.2)'}`
-                }}
-              >
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4l-8 4v7c0 4.418 3.582 8 8 8s8-3.582 8-8V8l-8-4z" />
-                </svg>
-                Admin Console
-              </motion.button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   );

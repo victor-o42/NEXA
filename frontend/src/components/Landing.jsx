@@ -243,16 +243,17 @@ export default function Landing() {
         transition={{ duration: 12, ease: 'easeInOut', repeat: Infinity, delay: 4 }}
       />
 
-      {/* ── Auth Card ── */}
+      {/* ── Auth Card (Double Bezel) ── */}
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-container rounded-3xl w-full max-w-md relative z-10 overflow-hidden"
+        transition={{ type: 'spring', stiffness: 400, damping: 30, delay: 0.1 }}
+        className="glass-panel p-1.5 sm:p-2 rounded-[2.5rem] w-full max-w-md relative z-10"
       >
-        {/* No neon line at the top — the background orbs carry the color accent */}
-
-        <div className="p-8 md:p-10">
+        <div className="rounded-[calc(2.5rem-0.375rem)] p-8 md:p-10 relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+          {/* Ambient inner glow */}
+          <div className="absolute -left-20 -top-20 w-64 h-64 rounded-full pointer-events-none"
+               style={{ background: 'var(--c-accent-dim)', filter: 'blur(60px)', opacity: 0.5 }} />
 
           {/* ── Brand header ── */}
           <motion.div

@@ -119,19 +119,30 @@
   }
 
   /* Premium Custom Scrollbars */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
   }
-  ::-webkit-scrollbar-track {
+  html:not(.dark) * {
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  *::-webkit-scrollbar-track {
     background: transparent;
+    margin: 4px;
   }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
   }
-  ::-webkit-scrollbar-thumb:hover {
+  *::-webkit-scrollbar-thumb:hover {
     background: var(--c-accent-dim);
+  }
+  html:not(.dark) *::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
   }
 
   /* ── DARK MODE (default) ── */

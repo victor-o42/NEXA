@@ -12,6 +12,11 @@ import OfflineBanner from './components/OfflineBanner';
  * Moving orbs to App level means Landing, Dashboard, and loading state all
  * share the same breathing background — consistent across the entire product.
  */
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import MarketingLanding from './components/MarketingLanding';
+
+// ... (keep the AmbientOrbs definition the same, I will inject the router logic)
+
 function App() {
   const [session, setSession] = useState(undefined);
   const [activeTab, setActiveTab] = useState('scanner');
@@ -100,46 +105,56 @@ function App() {
     );
   }
 
-  // Guest — Landing page
-  if (!session) {
-    return (
-      <div className="relative min-h-screen">
-        <OfflineBanner />
-        <AmbientOrbs />
-        {/* Landing renders its own local orbs too — they combine nicely */}
-        <div className="relative" style={{ zIndex: 1 }}>
-          <Landing />
-        </div>
-      </div>
-    );
-  }
-
-  // Authenticated — Dashboard shell
-  return (
+  const DashboardShell = () => (
     <div className="relative min-h-screen">
       <OfflineBanner />
       <AmbientOrbs />
-
-      {/*
-        Responsive layout:
-          Mobile  (< md): sidebar stacks above dashboard as a horizontal top bar
-          Desktop (≥ md): sidebar left, dashboard right, side-by-side
-      */}
       <div
         className="relative min-h-screen w-full p-3 sm:p-4 md:p-6 flex flex-col md:flex-row gap-3 sm:gap-4 md:gap-6"
         style={{ zIndex: 1 }}
       >
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
+        <Sidebar />
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0 md:max-h-[calc(100vh-3rem)] min-w-0">
-          <Dashboard
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            session={session}
-          />
+          <Dashboard session={session} />
         </main>
       </div>
     </div>
+  );
+
+  return (
+    <Router>
+      <Routes>
+        <Route 
+          path="/dashboard/*" 
+          element={session ? <DashboardShell /> : <Navigate to="/auth" replace />} 
+        />
+        <Route 
+          path="/" 
+          element={session ? <Navigate to="/dashboard/scanner" replace /> : (
+            <div className="relative min-h-screen">
+              <OfflineBanner />
+              <AmbientOrbs />
+              <div className="relative" style={{ zIndex: 1 }}>
+                <MarketingLanding />
+              </div>
+            </div>
+          )} 
+        />
+        <Route 
+          path="/auth" 
+          element={session ? <Navigate to="/dashboard/scanner" replace /> : (
+            <div className="relative min-h-screen">
+              <OfflineBanner />
+              <AmbientOrbs />
+              <div className="relative" style={{ zIndex: 1 }}>
+                <Landing />
+              </div>
+            </div>
+          )} 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 

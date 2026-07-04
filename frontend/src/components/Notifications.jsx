@@ -59,21 +59,22 @@ export default function Notifications() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="glass-container p-5 rounded-3xl border transition-all duration-300 hover:border-cyan-500/30"
-            style={{ borderColor: 'var(--c-border)' }}
+            className="glass-panel p-1.5 rounded-[2rem] hover:-translate-y-1 transition-transform"
           >
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl flex-shrink-0" style={{ background: 'var(--c-surface-2)' }}>
-                {notif.icon}
-              </div>
-              <div className="flex-1 min-w-0 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-bold truncate text-sm sm:text-base" style={{ color: 'var(--c-text-primary)' }}>{notif.title}</h3>
-                  <span className="text-xs flex-shrink-0" style={{ color: 'var(--c-text-muted)' }}>{notif.date}</span>
+            <div className="h-full rounded-[calc(2rem-0.375rem)] p-5 relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl flex-shrink-0" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {notif.icon}
                 </div>
-                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  {notif.message}
-                </p>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-bold truncate text-sm sm:text-base" style={{ color: 'var(--c-text-primary)' }}>{notif.title}</h3>
+                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--c-text-muted)' }}>{notif.date}</span>
+                  </div>
+                  <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    {notif.message}
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>

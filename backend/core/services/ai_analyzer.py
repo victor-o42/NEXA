@@ -61,7 +61,7 @@ class GroqAnalysisService:
             for k in keys:
                 self.clients.append(Groq(api_key=k))
                 
-        self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
+        self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-specdec')
         self.current_client_index = 0
 
     def get_client(self) -> Optional[Groq]:
