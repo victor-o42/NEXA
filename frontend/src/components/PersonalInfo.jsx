@@ -79,6 +79,7 @@ export default function PersonalInfo({ session }) {
       });
       
       if (!response.ok) {
+        if (response.status === 401) await supabase.auth.signOut();
         throw new Error('Failed to sync profile with backend database.');
       }
 
@@ -164,6 +165,7 @@ export default function PersonalInfo({ session }) {
       });
       
       if (!response.ok) {
+        if (response.status === 401) await supabase.auth.signOut();
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete account');
       }

@@ -5,6 +5,9 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Landing from './components/Landing';
 import OfflineBanner from './components/OfflineBanner';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+import Error404 from './components/Error404';
 
 /**
  * Root App shell.
@@ -15,20 +18,15 @@ import OfflineBanner from './components/OfflineBanner';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MarketingLanding from './components/MarketingLanding';
 
-// ... (keep the AmbientOrbs definition the same, I will inject the router logic)
-
 function App() {
   const [session, setSession] = useState(undefined);
-  const [activeTab, setActiveTab] = useState('scanner');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       setSession(s);
       
-      // Dispatch login event to Django backend purely for audit/history tracking
       if (event === 'SIGNED_IN' && s) {
-        // Prevent duplicate calls caused by Supabase firing SIGNED_IN on window focus
         if (!sessionStorage.getItem('login_tracked')) {
           sessionStorage.setItem('login_tracked', 'true');
           try {
@@ -50,10 +48,8 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Global ambient orb layer — renders on every page, fixed behind everything ──
   const AmbientOrbs = () => (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-      {/* Cyan — top-left */}
       <motion.div
         className="absolute rounded-full animate-orb-cyan"
         style={{
@@ -65,7 +61,6 @@ function App() {
         animate={{ scale: [1, 1.14, 1], opacity: [0.65, 1, 0.65] }}
         transition={{ duration: 8, ease: 'easeInOut', repeat: Infinity }}
       />
-      {/* Amethyst — bottom-right */}
       <motion.div
         className="absolute rounded-full animate-orb-purple"
         style={{
@@ -77,7 +72,6 @@ function App() {
         animate={{ scale: [1, 1.1, 1], opacity: [0.55, 0.9, 0.55] }}
         transition={{ duration: 10, ease: 'easeInOut', repeat: Infinity, delay: 2 }}
       />
-      {/* Blue accent — center-right */}
       <motion.div
         className="absolute rounded-full animate-orb-mid"
         style={{
@@ -92,7 +86,6 @@ function App() {
     </div>
   );
 
-  // Loading spinner while session resolves
   if (session === undefined) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center relative">
@@ -125,10 +118,6 @@ function App() {
     <Router>
       <Routes>
         <Route 
-          path="/dashboard/*" 
-          element={session ? <DashboardShell /> : <Navigate to="/auth" replace />} 
-        />
-        <Route 
           path="/" 
           element={session ? <Navigate to="/dashboard/scanner" replace /> : (
             <div className="relative min-h-screen">
@@ -152,7 +141,35 @@ function App() {
             </div>
           )} 
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route 
+          path="/privacy-policy" 
+          element={
+            <div className="relative min-h-screen">
+              <OfflineBanner />
+              <AmbientOrbs />
+              <div className="relative" style={{ zIndex: 1 }}>
+                <PrivacyPolicy />
+              </div>
+            </div>
+          } 
+        />
+        <Route 
+          path="/terms-of-service" 
+          element={
+            <div className="relative min-h-screen">
+              <OfflineBanner />
+              <AmbientOrbs />
+              <div className="relative" style={{ zIndex: 1 }}>
+                <TermsOfService />
+              </div>
+            </div>
+          } 
+        />
+        <Route 
+          path="/dashboard/*" 
+          element={session ? <DashboardShell /> : <Navigate to="/auth" replace />} 
+        />
+        <Route path="*" element={<Error404 />} />
       </Routes>
     </Router>
   );

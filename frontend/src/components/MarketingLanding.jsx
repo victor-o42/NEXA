@@ -1,254 +1,469 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import logo from '../assets/nexa_logo.png';
 
-export default function MarketingLanding() {
+// ─── Feature card data ────────────────────────────────────────────────────────
+
+const FEATURES = [
+  {
+    title: 'Conversational AI',
+    description: 'NEXA translates raw vulnerability payloads into actionable plain English, providing custom remediation scripts tailored to your architecture.',
+    accentColor: 'var(--c-accent)',
+    accentDim: 'var(--c-accent-dim)',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Port Scanning',
+    description: 'Non-destructive TCP/UDP diagnostics across the top 100 most critical service ports with real-time streaming results.',
+    accentColor: 'var(--c-accent)',
+    accentDim: 'var(--c-accent-dim)',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Nuclei Core',
+    description: 'Industry-standard YAML-based web vulnerability scanning engine running seamlessly against your HTTP endpoints.',
+    accentColor: 'var(--c-purple)',
+    accentDim: 'var(--c-purple-dim)',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Real-Time Streaming',
+    description: 'Watch your scan results populate live as NEXA discovers findings — no waiting for a full report to drop.',
+    accentColor: 'var(--c-purple)',
+    accentDim: 'var(--c-purple-dim)',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+];
+
+// ─── Stat items ───────────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: '<50ms', label: 'Avg Response Time' },
+  { value: '100+', label: 'Port Diagnostics' },
+  { value: '24/7', label: 'AI Monitoring' },
+];
+
+// ─── FeatureCard — uses the exact same glass-panel + double-bezel from Sidebar ─
+
+function FeatureCard({ feature, index }) {
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col items-center px-4 sm:px-6 lg:px-8 py-12 lg:py-24 selection:bg-cyan-500/30 selection:text-white text-center">
-      
-      {/* ── Background Ambient Layers ── */}
-      {/* The App.jsx global orbs are behind this. We add some local deep space glow. */}
-      <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: 'radial-gradient(circle at top, rgba(0,242,254,0.04) 0%, transparent 60%)' }} />
-
-      {/* ── Top Nav (Minimalist) ── */}
-      <motion.nav 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50 max-w-7xl mx-auto right-0"
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      className="glass-panel rounded-[2rem] p-1.5 group"
+    >
+      <div
+        className="rounded-[calc(2rem-0.375rem)] p-7 lg:p-8 relative overflow-hidden h-full flex flex-col"
+        style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.18)' }}
       >
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="NEXA" className="h-8 w-auto filter drop-shadow-[0_0_12px_rgba(0,242,254,0.4)]" />
-          <span className="text-xl font-bold tracking-widest text-white">NEXA</span>
+        {/* Ambient inner glow — mirrors the Sidebar pattern */}
+        <div
+          className="absolute -right-16 -top-16 w-48 h-48 rounded-full pointer-events-none transition-opacity duration-700 opacity-30 group-hover:opacity-60"
+          style={{ background: feature.accentDim, filter: 'blur(50px)' }}
+        />
+
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center mb-6 relative z-10 transition-all duration-300"
+          style={{
+            background: feature.accentDim,
+            border: `1px solid ${feature.accentColor}`,
+            color: feature.accentColor,
+            boxShadow: `0 0 12px ${feature.accentDim}`,
+          }}
+        >
+          {feature.icon}
         </div>
-        <div className="flex items-center gap-6">
-          <a href="#features" className="hidden sm:block text-sm font-medium tracking-wide transition-colors" style={{ color: 'var(--c-text-muted)' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--c-text-muted)'}>
-            Features
-          </a>
-          <Link 
-            to="/auth" 
-            className="px-6 py-2 rounded-full text-sm font-bold transition-all relative overflow-hidden group"
-            style={{ background: 'var(--c-surface-inset)', border: '1px solid var(--c-border)', color: 'var(--c-text-primary)' }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00F2FE]/20 to-[#4facfe]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-            <span className="relative z-10">Sign In</span>
-          </Link>
-        </div>
-      </motion.nav>
 
-      {/* ── HERO SECTION ── */}
-      <main className="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center justify-center mt-12 lg:mt-20 z-10 relative">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border"
-          style={{ background: 'rgba(0,242,254,0.05)', borderColor: 'rgba(0,242,254,0.15)' }}
-        >
-          <span className="w-2 h-2 rounded-full bg-[#00F2FE] animate-pulse drop-shadow-[0_0_6px_#00F2FE]" />
-          <span className="text-xs font-bold tracking-widest uppercase text-[#00F2FE]">Nexa Security Engine v2.0 Live</span>
-        </motion.div>
-
-        <motion.h1 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-6xl lg:text-[5.5rem] font-extrabold tracking-tight leading-[1.05] mb-8 text-transparent bg-clip-text"
-          style={{ backgroundImage: 'linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.4) 100%)' }}
-        >
-          Stop at nothing.<br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00F2FE] to-[#4facfe] filter drop-shadow-[0_0_30px_rgba(0,242,254,0.3)]">
-            Relentless Security.
-          </span>
-        </motion.h1>
-
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-2xl text-lg sm:text-xl font-medium leading-relaxed mb-12"
-          style={{ color: 'var(--c-text-secondary)' }}
-        >
-          We don't want you to stop building. But we do want you to know your code is bulletproof. 
-          NEXA actively audits your infrastructure with military-grade precision, wrapped in a 
-          human-centered interface.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-4"
-        >
-          {/* Primary CTA with Double Bezel */}
-          <Link to="/auth">
-            <motion.div 
-              whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: 'easeOut' } }}
-              whileTap={{ scale: 0.95 }}
-              className="glass-panel p-1.5 rounded-[2rem] cursor-pointer"
-            >
-              <div 
-                className="px-8 py-4 rounded-[calc(2rem-0.375rem)] flex items-center gap-3 font-bold text-lg relative overflow-hidden"
-                style={{ 
-                  background: 'linear-gradient(135deg, #00F2FE 0%, #4facfe 100%)',
-                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), 0 8px 32px rgba(0,242,254,0.3)'
-                }}
-              >
-                <span className="text-[#0B0C10] relative z-10">Start Scanning Now</span>
-                <svg className="w-5 h-5 text-[#0B0C10] relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-            </motion.div>
-          </Link>
-          
-          <a href="#features">
-            <motion.div 
-              whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: 'easeOut' } }}
-              whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 rounded-full font-bold text-lg border cursor-pointer transition-colors"
-              style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-primary)' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--c-surface-inset)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              Explore Capabilities
-            </motion.div>
-          </a>
-        </motion.div>
-      </main>
-
-      {/* ── BENTO FEATURES GRID ── */}
-      <section id="features" className="w-full max-w-6xl mx-auto mt-32 lg:mt-48 z-10 text-left">
-        <motion.h2 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-3xl font-extrabold mb-12 text-center" 
+        <h3
+          className="text-xl font-display font-bold tracking-tight mb-3 relative z-10"
           style={{ color: 'var(--c-text-primary)' }}
         >
-          Engineered for absolute clarity.
-        </motion.h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Card 1: AI Analysis */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            whileHover={{ y: -5, transition: { duration: 0.15, ease: 'easeOut' } }}
-            className="glass-panel p-1.5 rounded-[2.5rem] md:col-span-2 md:row-span-2 transition-all duration-200"
+          {feature.title}
+        </h3>
+        <p
+          className="text-sm leading-relaxed relative z-10"
+          style={{ color: 'var(--c-text-secondary)' }}
+        >
+          {feature.description}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Main MarketingLanding Component ──────────────────────────────────────────
+
+export default function MarketingLanding() {
+
+  // SEO injection — same approach as the Auth page
+  useEffect(() => {
+    document.title = 'NEXA | AI-Powered Vulnerability Scanner';
+
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name';
+      let tag = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    setMeta('description', 'NEXA provides autonomous, AI-driven network vulnerability scanning with real-time remediation guidance.');
+    setMeta('og:title', 'NEXA | AI-Powered Vulnerability Scanner', true);
+    setMeta('og:description', 'Autonomous vulnerability scanning with real-time AI remediation.', true);
+    setMeta('og:type', 'website', true);
+    setMeta('twitter:card', 'summary_large_image');
+    setMeta('twitter:title', 'NEXA — Next-Gen Vulnerability Scanner');
+  }, []);
+
+  return (
+    <div className="min-h-screen w-full relative overflow-hidden flex flex-col">
+
+      {/*
+        ── Breathing ambient orbs ──
+        Exact same pattern as Landing.jsx (Auth screen).
+        Three Framer Motion loops at staggered timings — the heartbeat of NEXA.
+      */}
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          top: '-20%', left: '-12%',
+          width: 750, height: 750,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,242,254,0.11) 0%, transparent 65%)',
+          filter: 'blur(40px)',
+        }}
+        animate={{ scale: [1, 1.14, 1], opacity: [0.65, 1, 0.65] }}
+        transition={{ duration: 8, ease: 'easeInOut', repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-18%', right: '-12%',
+          width: 820, height: 820,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(155,93,229,0.11) 0%, transparent 65%)',
+          filter: 'blur(50px)',
+        }}
+        animate={{ scale: [1, 1.1, 1], opacity: [0.55, 0.9, 0.55] }}
+        transition={{ duration: 10, ease: 'easeInOut', repeat: Infinity, delay: 2 }}
+      />
+      <motion.div
+        className="absolute pointer-events-none"
+        style={{
+          top: '45%', left: '58%',
+          width: 420, height: 420,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(79,172,254,0.07) 0%, transparent 68%)',
+          filter: 'blur(30px)',
+          transform: 'translate(-50%, -50%)',
+        }}
+        animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0.7, 0.35] }}
+        transition={{ duration: 12, ease: 'easeInOut', repeat: Infinity, delay: 4 }}
+      />
+
+      {/* ── Navigation ── */}
+      <motion.nav
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        className="w-full max-w-6xl mx-auto px-6 lg:px-10 py-8 flex justify-between items-center relative z-50"
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src={logo}
+            alt="NEXA"
+            className="h-9 w-auto object-contain"
+            style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
+          />
+          <span
+            className="text-lg font-display font-bold tracking-wider"
+            style={{ color: 'var(--c-text-primary)' }}
           >
-            <div className="h-full rounded-[calc(2.5rem-0.375rem)] p-8 md:p-12 relative overflow-hidden flex flex-col justify-end min-h-[400px]" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
-              
-              {/* Mock AI Chat Interface replacing the empty space */}
-              <div className="absolute top-0 left-0 right-0 bottom-40 p-8 flex flex-col gap-4 pointer-events-none opacity-80" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)' }}>
-                <div className="flex gap-3 items-end">
-                  <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center shrink-0" style={{ background: 'var(--c-surface-2)' }}>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  </div>
-                  <div className="glass-panel p-3 rounded-2xl rounded-bl-sm border border-white/5 text-xs font-mono text-gray-300">
-                    Nmap scan completed. 22/SSH is open.
-                  </div>
-                </div>
-                
-                <div className="flex gap-3 items-end self-end flex-row-reverse">
-                  <div className="w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(0,242,254,0.3)]" style={{ background: 'rgba(0,242,254,0.1)', borderColor: 'var(--c-accent)' }}>
-                    <img src={logo} alt="NEXA AI" className="w-4 h-4 object-contain filter drop-shadow-[0_0_5px_rgba(0,242,254,0.5)]" />
-                  </div>
-                  <div className="p-4 rounded-2xl rounded-br-sm border text-sm max-w-[80%]" style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'var(--c-accent-dim)', color: 'var(--c-text-primary)' }}>
-                    <span className="text-[#00F2FE] font-bold block mb-1">NEXA Security Agent</span>
-                    Port 22 being open isn't inherently bad, but it exposes you to brute-force attacks. I recommend disabling password authentication and moving to key-based auth. I've generated a hardening script for your sshd_config.
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-auto">
-                <h3 className="text-2xl font-bold mb-3" style={{ color: 'var(--c-text-primary)' }}>Conversational AI Analysis</h3>
-                <p className="max-w-md text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Don't just stare at JSON payloads. NEXA's built-in AI translates complex vulnerability reports into plain English, offering immediate remediation scripts tailored to your stack.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 2: Nuclei Core */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            whileHover={{ y: -5, transition: { duration: 0.15, ease: 'easeOut' } }}
-            className="glass-panel p-1.5 rounded-[2rem] transition-all duration-200"
-          >
-            <div className="h-full rounded-[calc(2rem-0.375rem)] p-8 relative overflow-hidden flex flex-col" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
-              <div className="w-12 h-12 rounded-xl mb-auto flex items-center justify-center" style={{ background: 'rgba(0,242,254,0.1)', color: '#00F2FE' }}>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mt-8 mb-2" style={{ color: 'var(--c-text-primary)' }}>Nuclei Powered</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Industry standard YAML-based scanning engines running seamlessly in the background.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 3: Deep Nmap */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            whileHover={{ y: -5, transition: { duration: 0.15, ease: 'easeOut' } }}
-            className="glass-panel p-1.5 rounded-[2rem] transition-all duration-200"
-          >
-            <div className="h-full rounded-[calc(2rem-0.375rem)] p-8 relative overflow-hidden flex flex-col" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
-              <div className="w-12 h-12 rounded-xl mb-auto flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7' }}>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mt-8 mb-2" style={{ color: 'var(--c-text-primary)' }}>Port Diagnostics</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Deep Nmap integration maps your open ports and exposed services with zero friction.
-              </p>
-            </div>
-          </motion.div>
-
+            NEXA
+          </span>
         </div>
-      </section>
 
-      {/* ── BOTTOM CTA ── */}
-      <section className="w-full mt-32 mb-24 z-10 flex flex-col items-center">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center" style={{ color: 'var(--c-text-primary)' }}>Stop wondering. Start securing.</h2>
-        <Link to="/auth">
-          <motion.div 
-            whileHover={{ scale: 1.05, transition: { duration: 0.15, ease: 'easeOut' } }}
-            whileTap={{ scale: 0.95 }}
-            className="glass-panel p-1.5 rounded-[2rem] cursor-pointer inline-block"
-          >
-            <div 
-              className="px-10 py-5 rounded-[calc(2rem-0.375rem)] font-bold text-lg"
-              style={{ background: 'var(--c-surface-inset)', color: 'var(--c-text-primary)' }}
+        <div className="hidden md:flex items-center gap-8">
+          {['About', 'Pricing', 'Documentation'].map(label => (
+            <Link
+              key={label}
+              to={`/${label.toLowerCase() === 'documentation' ? 'docs' : label.toLowerCase()}`}
+              className="text-sm font-semibold tracking-wide transition-colors duration-200 hover:text-[var(--c-accent)]"
+              style={{ color: 'var(--c-text-muted)' }}
             >
-              Enter NEXA Gateway
-            </div>
-          </motion.div>
+              {label}
+            </Link>
+          ))}
+          <Link to="/auth">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+              className="px-7 py-2.5 rounded-xl text-sm font-bold neon-glow-box"
+              style={{
+                background: 'linear-gradient(135deg, var(--c-accent) 0%, #4facfe 50%, var(--c-purple) 100%)',
+                color: '#0B0C10',
+              }}
+            >
+              Get Started
+            </motion.button>
+          </Link>
+        </div>
+
+        {/* Mobile CTA */}
+        <Link to="/auth" className="md:hidden">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            className="px-5 py-2 rounded-xl text-xs font-bold"
+            style={{
+              background: 'linear-gradient(135deg, var(--c-accent) 0%, var(--c-purple) 100%)',
+              color: '#0B0C10',
+            }}
+          >
+            Get Started
+          </motion.button>
         </Link>
+      </motion.nav>
+
+      {/* ── Hero Section ── */}
+      <section className="w-full max-w-6xl mx-auto px-6 lg:px-10 pt-16 sm:pt-24 lg:pt-32 pb-20 relative z-10">
+        <div className="max-w-3xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl sm:text-6xl lg:text-[5.5rem] font-display font-black tracking-tighter leading-[0.92] mb-8"
+            style={{ color: 'var(--c-text-primary)' }}
+          >
+            Absolute{' '}
+            <span
+              className="text-transparent bg-clip-text"
+              style={{
+                backgroundImage: 'linear-gradient(135deg, var(--c-accent) 20%, #4facfe 60%, var(--c-purple) 100%)',
+              }}
+            >
+              Clarity.
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-xl text-lg sm:text-xl leading-relaxed mb-10"
+            style={{ color: 'var(--c-text-secondary)' }}
+          >
+            Autonomous, AI-driven vulnerability scanning with real-time remediation guidance. Know exactly where you stand.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col sm:flex-row gap-4"
+          >
+            <Link to="/auth">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+                className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-sm font-bold neon-glow-box"
+                style={{
+                  background: 'linear-gradient(135deg, var(--c-accent) 0%, #4facfe 50%, var(--c-purple) 100%)',
+                  color: '#0B0C10',
+                }}
+              >
+                <span>Start Scanning</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </motion.button>
+            </Link>
+            <Link to="/docs">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+                className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-sm font-bold transition-colors"
+                style={{
+                  background: 'var(--c-icon-btn-bg)',
+                  border: '1px solid var(--c-icon-btn-border)',
+                  color: 'var(--c-text-primary)',
+                }}
+              >
+                <span>Read Documentation</span>
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="w-full max-w-6xl mx-auto border-t py-8 mt-auto flex flex-col sm:flex-row justify-between items-center gap-4 z-10" style={{ borderColor: 'var(--c-border-subtle)' }}>
-        <div className="flex items-center gap-2 grayscale opacity-50">
-          <img src={logo} alt="NEXA" className="h-5 w-auto" />
-          <span className="text-sm font-bold tracking-widest text-white">NEXA</span>
+      {/* ── Stats Row ── */}
+      <section className="w-full max-w-6xl mx-auto px-6 lg:px-10 pb-16 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-panel rounded-[2rem] p-1.5"
+        >
+          <div
+            className="rounded-[calc(2rem-0.375rem)] p-6 lg:p-8 flex flex-col sm:flex-row items-center justify-around gap-6"
+            style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.18)' }}
+          >
+            {STATS.map((stat, i) => (
+              <div key={i} className="text-center flex-1">
+                <div
+                  className="text-3xl lg:text-4xl font-display font-black tracking-tight mb-1"
+                  style={{ color: 'var(--c-accent)' }}
+                >
+                  {stat.value}
+                </div>
+                <div
+                  className="text-xs font-semibold tracking-widest uppercase"
+                  style={{ color: 'var(--c-text-muted)' }}
+                >
+                  {stat.label}
+                </div>
+                {i < STATS.length - 1 && (
+                  <div className="hidden sm:block absolute right-0 top-1/4 bottom-1/4 w-px" style={{ background: 'var(--c-border)' }} />
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Features Grid ── */}
+      <section className="w-full max-w-6xl mx-auto px-6 lg:px-10 py-16 lg:py-24 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center mb-14"
+        >
+          <h2
+            className="text-3xl sm:text-4xl font-display font-black tracking-tight mb-4"
+            style={{ color: 'var(--c-text-primary)' }}
+          >
+            Built for Modern Security
+          </h2>
+          <p
+            className="max-w-lg mx-auto text-base leading-relaxed"
+            style={{ color: 'var(--c-text-muted)' }}
+          >
+            Everything you need to understand, analyze, and resolve vulnerabilities — all in one place.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {FEATURES.map((feature, i) => (
+            <FeatureCard key={feature.title} feature={feature} index={i} />
+          ))}
         </div>
-        <div className="text-xs font-mono" style={{ color: 'var(--c-text-hint)' }}>
-          © 2026 NEXA. Strictly Defensive Operations Only.
+      </section>
+
+      {/* ── Bottom CTA ── */}
+      <section className="w-full max-w-6xl mx-auto px-6 lg:px-10 py-20 lg:py-28 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-panel rounded-[2.5rem] p-1.5 sm:p-2"
+        >
+          <div
+            className="rounded-[calc(2.5rem-0.5rem)] p-10 sm:p-14 lg:p-20 text-center relative overflow-hidden"
+            style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}
+          >
+            {/* Inner ambient glow */}
+            <div
+              className="absolute left-1/2 top-0 -translate-x-1/2 w-[500px] h-[300px] rounded-full pointer-events-none"
+              style={{ background: 'var(--c-accent-dim)', filter: 'blur(80px)', opacity: 0.4 }}
+            />
+
+            <h2
+              className="text-3xl sm:text-5xl font-display font-black tracking-tight mb-6 relative z-10"
+              style={{ color: 'var(--c-text-primary)' }}
+            >
+              Ready to know where you stand?
+            </h2>
+            <p
+              className="max-w-md mx-auto text-base leading-relaxed mb-10 relative z-10"
+              style={{ color: 'var(--c-text-muted)' }}
+            >
+              Start a free scan in under 30 seconds. No credit card, no complex setup.
+            </p>
+            <Link to="/auth" className="relative z-10 inline-block">
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+                className="px-10 py-4 rounded-xl text-sm font-bold neon-glow-box"
+                style={{
+                  background: 'linear-gradient(135deg, var(--c-accent) 0%, #4facfe 50%, var(--c-purple) 100%)',
+                  color: '#0B0C10',
+                }}
+              >
+                Get Started — Free
+              </motion.button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="w-full relative z-10 mt-auto" style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
+              <img src={logo} alt="NEXA" className="h-6 w-auto" />
+              <span
+                className="text-base font-display font-bold tracking-wider"
+                style={{ color: 'var(--c-text-primary)' }}
+              >
+                NEXA
+              </span>
+            </div>
+            <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
+              © 2026 NEXA. Defensive Operations Only.
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-10 gap-y-3 text-sm font-medium" style={{ color: 'var(--c-text-muted)' }}>
+            <Link to="/about" className="hover:text-[var(--c-accent)] transition-colors">About</Link>
+            <Link to="/pricing" className="hover:text-[var(--c-accent)] transition-colors">Pricing</Link>
+            <Link to="/privacy-policy" className="hover:text-[var(--c-accent)] transition-colors">Privacy</Link>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-[var(--c-accent)] transition-colors">Twitter</a>
+
+            <Link to="/contact" className="hover:text-[var(--c-accent)] transition-colors">Contact</Link>
+            <Link to="/docs" className="hover:text-[var(--c-accent)] transition-colors">Docs</Link>
+            <Link to="/terms-of-service" className="hover:text-[var(--c-accent)] transition-colors">Terms</Link>
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-[var(--c-accent)] transition-colors">GitHub</a>
+          </div>
         </div>
       </footer>
     </div>

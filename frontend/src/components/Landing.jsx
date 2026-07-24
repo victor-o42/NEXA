@@ -571,10 +571,17 @@ export default function Landing() {
           )}
 
           {/* ── Fine print ── */}
-          <p className="mt-7 text-center text-[10px] leading-relaxed" style={{ color: 'var(--c-text-hint)' }}>
-            By continuing, you agree to NEXA's safe scanning policy.{' '}
-            <span style={{ color: 'var(--c-accent-muted)' }}>No destructive payloads. Ever.</span>
-          </p>
+          <div className="mt-7 flex flex-col items-center gap-3">
+            <p className="text-center text-[10px] leading-relaxed" style={{ color: 'var(--c-text-hint)' }}>
+              By continuing, you agree to NEXA's safe scanning policy.{' '}
+              <span style={{ color: 'var(--c-accent-muted)' }}>No destructive payloads. Ever.</span>
+            </p>
+            <div className="flex gap-4 text-[10px]" style={{ color: 'var(--c-text-muted)' }}>
+              <a href="/privacy-policy" className="hover:text-[var(--c-accent)] transition-colors">Privacy Policy</a>
+              <span>&bull;</span>
+              <a href="/terms-of-service" className="hover:text-[var(--c-accent)] transition-colors">Terms of Service</a>
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>

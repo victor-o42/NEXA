@@ -99,7 +99,68 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: (
+      <svg className="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ];
+
+// ─── Sound Effects (Web Audio API) ────────────────────────────────────────────────
+
+let globalAudioCtx = null;
+const getAudioContext = () => {
+  if (!globalAudioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      globalAudioCtx = new AudioContext();
+    }
+  }
+  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+    globalAudioCtx.resume();
+  }
+  return globalAudioCtx;
+};
+
+const playSound = (type) => {
+  try {
+    if (localStorage.getItem('nexa-sound-enabled') === 'false') return;
+    
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    if (type === 'hover') {
+      // Extremely subtle, ultra-short physical UI tick
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.01);
+      gain.gain.setValueAtTime(0.01, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.01);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.01);
+    } else if (type === 'click') {
+      // Deeper, satisfying, premium confirmation thud
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.04);
+    }
+  } catch(e) {}
+};
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
@@ -126,6 +187,8 @@ export default function Sidebar() {
       if (res.ok) {
         const profile = await res.json();
         setDjangoProfile(profile);
+      } else if (res.status === 401) {
+        await supabase.auth.signOut();
       }
     } catch (e) {
       console.error(e);
@@ -223,7 +286,7 @@ export default function Sidebar() {
           </button>
           <div className="flex items-center gap-2">
             <img src={logo} alt="NEXA" className="h-6 w-auto object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(0,242,254,0.5))' }} />
-            <span className="text-sm font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+            <span className="text-sm font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
           </div>
         </div>
 
@@ -283,7 +346,7 @@ export default function Sidebar() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <img src={logo} alt="NEXA" className="h-8 w-auto object-contain" />
-                <span className="text-lg font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+                <span className="text-lg font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -299,7 +362,9 @@ export default function Sidebar() {
                 return (
                   <motion.button
                     key={`mob-${item.id}`}
+                    onMouseEnter={() => playSound('hover')}
                     onClick={() => {
+                      playSound('click');
                       navigate(`/dashboard/${item.id}`);
                       setMobileMenuOpen(false);
                     }}
@@ -386,7 +451,7 @@ export default function Sidebar() {
                 className="h-9 w-auto object-contain hover:scale-105 transition-transform duration-300"
                 style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
               />
-              <span className="text-lg font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+              <span className="text-lg font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
             </div>
             <button
               onClick={() => setIsDark(p => !p)}
@@ -426,7 +491,8 @@ export default function Sidebar() {
               return (
                 <motion.button
                   key={`desk-${item.id}`}
-                  onClick={() => navigate(`/dashboard/${item.id}`)}
+                  onMouseEnter={() => playSound('hover')}
+                  onClick={() => { playSound('click'); navigate(`/dashboard/${item.id}`); }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 15 }}

@@ -7,6 +7,7 @@ import PersonalInfo from './PersonalInfo';
 import Notifications from './Notifications';
 import LoginHistory from './LoginHistory';
 import AdminDashboard from './AdminDashboard';
+import Settings from './Settings';
 import logo from '../assets/nexa_logo.png';
 
 // ─── Time-based greeting ──────────────────────────────────────────────────────
@@ -81,11 +82,12 @@ const SCANNER_OPTIONS = [
     description: 'Non-destructive TCP/UDP diagnostics across the top 100 most critical service ports. Enter a domain or IP.',
     hoverColor: 'var(--c-accent)',
     icon: (
-      <svg className="w-5 h-5" style={{ color: 'var(--c-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12H17M3 12H7" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21V17M12 3V7" />
-        <circle cx="12" cy="12" r="3" strokeWidth="1.5" />
-        <circle cx="12" cy="12" r="9" strokeWidth="1.25" strokeDasharray="3 3" />
+      <svg className="w-[22px] h-[22px] text-[var(--c-accent)] drop-shadow-[0_0_12px_rgba(0,242,254,0.4)] transition-all duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" strokeDasharray="3 4" className="animate-[spin_10s_linear_infinite]" />
+        <circle cx="12" cy="12" r="5" fill="var(--c-accent)" fillOpacity="0.15" />
+        <path d="M12 7v10M7 12h10" strokeWidth="1" />
+        <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+        <path d="M19 12h3M2 12h3M12 2v3M12 19v3" strokeWidth="1.5" />
       </svg>
     ),
   },
@@ -93,12 +95,15 @@ const SCANNER_OPTIONS = [
     id: 'opt-web', key: 'web',
     label: 'Web Application Vulnerability Scanner',
     description: 'Deep inspection of HTTP endpoints for misconfigs, CVEs, and exposed attack surfaces. Enter a URL or domain.',
-    hoverColor: 'var(--c-accent)',
+    hoverColor: '#a855f7',
     icon: (
-      <svg className="w-5 h-5" style={{ color: 'var(--c-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 2L3 7l9 5 9-5-9-5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l9 5 9-5" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 17l9 5 9-5" />
+      <svg className="w-[22px] h-[22px] text-[#a855f7] drop-shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="M2 8h20" strokeWidth="1.5" />
+        <path d="M6 6h.01M10 6h.01" strokeWidth="2" strokeLinecap="round" />
+        <path d="M12 11l4.5 3-4.5 6-4.5-6 4.5-3z" fill="#a855f7" fillOpacity="0.2" className="animate-pulse" />
+        <path d="M12 11v9" strokeOpacity="0.5" />
+        <path d="M7.5 14h9" strokeOpacity="0.5" />
       </svg>
     ),
   },
@@ -403,10 +408,13 @@ export default function Dashboard({ session }) {
       try {
         const token = await getFreshToken();
         if (!token) return;
-        await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/ping/', {
+        const response = await fetch((window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click') + '/api/v1/user/ping/', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (response.status === 401) {
+          await supabase.auth.signOut();
+        }
       } catch (err) {
         // Silently fail if ping fails
       }
@@ -435,6 +443,9 @@ export default function Dashboard({ session }) {
         const data = await response.json();
         setScanHistory(data);
       } else {
+        if (response.status === 401) {
+          await supabase.auth.signOut();
+        }
         console.error('Failed to fetch scan history', response.status);
       }
     } catch (err) {
@@ -454,6 +465,8 @@ export default function Dashboard({ session }) {
       if (response.ok) {
         const data = await response.json();
         setUserProfile(data);
+      } else if (response.status === 401) {
+        await supabase.auth.signOut();
       }
     } catch (err) {
       console.error('Failed to fetch profile', err);
@@ -468,7 +481,7 @@ export default function Dashboard({ session }) {
         const row = payload.new;
         if (row?.status === 'COMPLETED') {
           setScanResult(row);
-          navigate('results');
+          navigate('/dashboard/results');
           setIsScanning(false);
           // Refresh history and profile to include the new record and updated quota
           fetchHistory();
@@ -540,7 +553,7 @@ export default function Dashboard({ session }) {
             results:     data.scan_results,
             explanation: data.ai_summary || '',
           });
-          setTimeout(() => navigate('results'), 1200); // small delay to let user see "completed" state before jumping
+          setTimeout(() => navigate('/dashboard/results'), 1200); // small delay to let user see "completed" state before jumping
         }
         setIsScanning(false);
         source.close();
@@ -631,6 +644,7 @@ export default function Dashboard({ session }) {
           <Route path="notifications" element={<Notifications />} />
           <Route path="login_history" element={<LoginHistory />} />
           <Route path="admin" element={<AdminDashboard />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="scanner" replace />} />
           <Route path="scanner" element={
           <motion.div

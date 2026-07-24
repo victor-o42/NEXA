@@ -60,8 +60,7 @@ class GroqAnalysisService:
             keys = [k.strip() for k in raw_keys.split(',') if k.strip()]
             for k in keys:
                 self.clients.append(Groq(api_key=k))
-                
-        self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-specdec')
+        self.model_name = getattr(settings, 'GROQ_MODEL', 'openai/gpt-oss-120b')
         self.current_client_index = 0
 
     def get_client(self) -> Optional[Groq]:

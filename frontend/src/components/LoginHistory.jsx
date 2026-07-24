@@ -21,6 +21,8 @@ export default function LoginHistory() {
         if (response.ok) {
           const data = await response.json();
           setHistory(data);
+        } else if (response.status === 401) {
+          await supabase.auth.signOut();
         }
       } catch (error) {
         console.error("Failed to fetch login history:", error);

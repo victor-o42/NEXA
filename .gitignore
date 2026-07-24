@@ -21,3 +21,12 @@ db.sqlite3
 .vscode/
 .idea/
 *.swp
+
+# Academic / Project Documentation
+CHAPTER_3_GUIDE.md
+CHAPTER_4_GUIDE.md
+CHAPTER_5_GUIDE.md
+our_draft.pdf
+reference.pdf
+ref_text.txt
+*.pdf

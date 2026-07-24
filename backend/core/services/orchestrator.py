@@ -29,7 +29,7 @@ def run_nexa_orchestrator(target: str, engine: str = 'port', original_url: str |
     if ":" in clean_target:
         clean_target = clean_target.split(":")[0]
 
-    # Determine the web URL to use — caller can pass the original full URL for Nuclei
+    # Determine the web URL to use caller can pass the original full URL for Nuclei
     web_url = original_url or f"https://{clean_target}"
 
     # Rule 1: Self-Scan Easter Egg still lives here as a safety net
