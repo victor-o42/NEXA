@@ -449,7 +449,11 @@ export default function Dashboard({ session }) {
 
   // ── Load real scan history from Supabase ──────────────────────────────────
   const fetchHistory = useCallback(async () => {
-    setHistoryLoading(true);
+    // Only show full loading state if we have no cached data yet
+    setScanHistory(prev => {
+      if (!prev || prev.length === 0) setHistoryLoading(true);
+      return prev;
+    });
     try {
       if (!session) return;
       const token = await getFreshToken();

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 
+let cachedLoginHistory = null;
+
 export default function LoginHistory() {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState(cachedLoginHistory || []);
+  const [loading, setLoading] = useState(!cachedLoginHistory);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -20,6 +22,7 @@ export default function LoginHistory() {
         
         if (response.ok) {
           const data = await response.json();
+          cachedLoginHistory = data;
           setHistory(data);
         } else if (response.status === 401) {
           await supabase.auth.signOut();
