@@ -366,7 +366,26 @@ export default function Dashboard({ session }) {
   const [selectedScanner, setSelectedScanner] = useState('port');
   const [isScanning, setIsScanning]           = useState(false);
   const [streamMessages, setStreamMessages]   = useState([]);
-  const [scanResult, setScanResult]           = useState(null);
+  const [scanResult, setScanResultState]      = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('nexa_latest_scan_result');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const setScanResult = useCallback((val) => {
+    try {
+      if (val) {
+        sessionStorage.setItem('nexa_latest_scan_result', JSON.stringify(val));
+      } else {
+        sessionStorage.removeItem('nexa_latest_scan_result');
+      }
+    } catch (e) {}
+    setScanResultState(val);
+  }, []);
+
   const [connectionError, setConnectionError] = useState('');
   const [selfScanMessage, setSelfScanMessage] = useState('');
 

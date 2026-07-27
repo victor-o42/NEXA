@@ -6,7 +6,45 @@ import logo from '../assets/nexa_logo.png';
 export default function ScanResults({ scanResult }) {
   const [showTechDetails, setShowTechDetails] = useState(false);
 
-  if (!scanResult) return null;
+  if (!scanResult) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -15 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="glass-panel p-1.5 sm:p-2 rounded-[2rem] sm:rounded-[2.5rem]"
+      >
+        <div className="rounded-[calc(2rem-0.375rem)] sm:rounded-[calc(2.5rem-0.5rem)] p-8 sm:p-12 flex flex-col items-center text-center relative overflow-hidden" style={{ background: 'var(--c-surface-inset)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'var(--c-accent-dim)', border: '1px solid var(--c-border-accent)' }}>
+            <Shield className="w-8 h-8" style={{ color: 'var(--c-accent)' }} />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2" style={{ color: 'var(--c-text-primary)' }}>
+            No Scan Result Active
+          </h2>
+          <p className="text-sm max-w-md mb-8" style={{ color: 'var(--c-text-secondary)' }}>
+            Run a new security diagnostic from the scanner or select a previous scan from your history log to view detailed AI analysis.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <a
+              href="/dashboard/scanner"
+              className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-transform hover:scale-105"
+              style={{ background: 'linear-gradient(135deg, var(--c-accent) 0%, #4facfe 100%)', color: '#0B0C10' }}
+            >
+              Start New Scan
+            </a>
+            <a
+              href="/dashboard/login_history"
+              className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+              style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-text-primary)' }}
+            >
+              View Log
+            </a>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   const { target, status, results, explanation } = scanResult;
   const openPorts = results?.open_ports || [];
