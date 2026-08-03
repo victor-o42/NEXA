@@ -61,6 +61,17 @@ class SupabaseJWTAuthentication(authentication.BaseAuthentication):
         # Ensure UserProfile exists
         profile, profile_created = UserProfile.objects.get_or_create(user=user)
 
+        # Auto-sync admin role from Supabase user metadata / app metadata if set
+        app_meta = getattr(user_obj, 'app_metadata', {}) or {}
+        is_admin_flag = (
+            user_metadata.get('is_admin') is True or 
+            app_meta.get('is_admin') is True or 
+            app_meta.get('role') == 'admin'
+        )
+        if is_admin_flag and not profile.is_admin:
+            profile.is_admin = True
+            profile.save(update_fields=['is_admin'])
+
         # Sync profile names if we just created the profile OR if they are missing
         # This handles Google OAuth 'given_name'/'family_name' and custom 'first_name'/'last_name'
         if profile_created or (not profile.first_name and not profile.last_name):
