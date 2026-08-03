@@ -115,7 +115,7 @@ def run_port_scan(target: str, ports_to_scan: list[int] | None = None) -> dict:
             
             # Execute a safe, non-destructive version detection scan (-sV) against baseline ports.
             # -T4 speeds up execution, --open filters out closed ports to save parsing overhead.
-            nm.scan(hosts=resolved_ip, ports=ports_str, arguments="-sV -T4 --open")
+            nm.scan(hosts=resolved_ip, ports=ports_str, arguments="-sV -T4 --open --host-timeout 15s --max-retries 1")
             
             # Parse Nmap results. If the host is found in Nmap's scan list:
             if resolved_ip in nm.all_hosts():

@@ -5,8 +5,15 @@ import { supabase } from '../supabaseClient';
 let cachedLoginHistory = null;
 
 export default function LoginHistory() {
-  const [history, setHistory] = useState(cachedLoginHistory || []);
-  const [loading, setLoading] = useState(!cachedLoginHistory);
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('nexa_login_history');
+      return saved ? JSON.parse(saved) : (cachedLoginHistory || []);
+    } catch (e) {
+      return cachedLoginHistory || [];
+    }
+  });
+  const [loading, setLoading] = useState(!history || history.length === 0);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -24,6 +31,7 @@ export default function LoginHistory() {
           const data = await response.json();
           cachedLoginHistory = data;
           setHistory(data);
+          try { sessionStorage.setItem('nexa_login_history', JSON.stringify(data)); } catch (e) {}
         } else if (response.status === 401) {
           await supabase.auth.signOut();
         }

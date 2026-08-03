@@ -27,8 +27,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function AdminDashboard() {
-  const [metrics, setMetrics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('nexa_admin_metrics');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(!metrics);
   const [error, setError] = useState('');
   const [quotaUpdates, setQuotaUpdates] = useState({});
 
@@ -54,6 +61,7 @@ export default function AdminDashboard() {
       
       const data = await response.json();
       setMetrics(data);
+      try { sessionStorage.setItem('nexa_admin_metrics', JSON.stringify(data)); } catch (e) {}
     } catch (err) {
       setError(err.message);
     } finally {

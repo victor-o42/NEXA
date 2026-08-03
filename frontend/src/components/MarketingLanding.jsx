@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import logo from '../assets/nexa_logo.png';
+import NexaWordmark from './NexaWordmark';
 
 // ─── Feature card data ────────────────────────────────────────────────────────
 
@@ -197,12 +198,7 @@ export default function MarketingLanding() {
             className="h-9 w-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
           />
-          <span
-            className="text-lg font-display font-bold tracking-wider"
-            style={{ color: 'var(--c-text-primary)' }}
-          >
-            NEXA
-          </span>
+          <NexaWordmark height={20} glow={true} />
         </div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -441,12 +437,7 @@ export default function MarketingLanding() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
               <img src={logo} alt="NEXA" className="h-6 w-auto" />
-              <span
-                className="text-base font-display font-bold tracking-wider"
-                style={{ color: 'var(--c-text-primary)' }}
-              >
-                NEXA
-              </span>
+              <NexaWordmark height={16} glow={true} />
             </div>
             <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
               © 2026 NEXA. Defensive Operations Only.

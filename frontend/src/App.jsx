@@ -106,7 +106,7 @@ function App() {
         className="relative min-h-screen w-full p-3 sm:p-4 md:p-6 flex flex-col md:flex-row gap-3 sm:gap-4 md:gap-6"
         style={{ zIndex: 1 }}
       >
-        <Sidebar />
+        <Sidebar session={session} />
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0 md:max-h-[calc(100vh-3rem)] min-w-0">
           <Dashboard session={session} />
         </main>
@@ -121,7 +121,6 @@ function App() {
           path="/" 
           element={session ? <Navigate to="/dashboard/scanner" replace /> : (
             <div className="relative min-h-screen">
-              <OfflineBanner />
               <AmbientOrbs />
               <div className="relative" style={{ zIndex: 1 }}>
                 <MarketingLanding />
@@ -133,7 +132,6 @@ function App() {
           path="/auth" 
           element={session ? <Navigate to="/dashboard/scanner" replace /> : (
             <div className="relative min-h-screen">
-              <OfflineBanner />
               <AmbientOrbs />
               <div className="relative" style={{ zIndex: 1 }}>
                 <Landing />
@@ -145,7 +143,6 @@ function App() {
           path="/privacy-policy" 
           element={
             <div className="relative min-h-screen">
-              <OfflineBanner />
               <AmbientOrbs />
               <div className="relative" style={{ zIndex: 1 }}>
                 <PrivacyPolicy />
@@ -157,7 +154,6 @@ function App() {
           path="/terms-of-service" 
           element={
             <div className="relative min-h-screen">
-              <OfflineBanner />
               <AmbientOrbs />
               <div className="relative" style={{ zIndex: 1 }}>
                 <TermsOfService />

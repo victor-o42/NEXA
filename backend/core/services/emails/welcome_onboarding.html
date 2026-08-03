@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta color-scheme="dark">
+  <title>Welcome to NEXA Security</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background-color: #0B0C10; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e8eaf0; -webkit-font-smoothing: antialiased; }
+    .wrapper { max-width: 580px; margin: 0 auto; padding: 40px 16px; }
+    .card { background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
+    .top-bar { height: 3px; background: linear-gradient(90deg, #00F2FE 0%, #4facfe 50%, #9B5DE5 100%); }
+    .card-body { padding: 40px 36px; }
+    .brand { font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #00F2FE; display: inline-block; margin-bottom: 24px; }
+    .brand-accent { color: #00F2FE; }
+    h1 { margin: 0 0 16px; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3; }
+    p { margin: 0 0 18px; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.65); }
+    .features { margin: 28px 0; padding: 0; list-style: none; }
+    .feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 14px 16px; border-radius: 14px; }
+    .feature-icon { font-size: 18px; flex-shrink: 0; }
+    .feature-title { font-weight: 700; color: #ffffff; font-size: 13px; margin-bottom: 2px; }
+    .feature-desc { font-size: 12px; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.5; }
+    .cta-wrap { text-align: center; margin: 32px 0 24px; }
+    .cta-btn { display: inline-block; padding: 15px 36px; border-radius: 14px; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-decoration: none; color: #0B0C10 !important; background: linear-gradient(135deg, #00F2FE 0%, #4facfe 50%, #9B5DE5 100%); box-shadow: 0 8px 24px rgba(0,242,254,0.35); }
+    .security-note { padding: 14px 18px; border-radius: 12px; background: rgba(155,93,229,0.06); border: 1px solid rgba(155,93,229,0.18); font-size: 11px; line-height: 1.6; color: rgba(255,255,255,0.45); }
+    .footer { padding: 24px 36px 32px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: rgba(255,255,255,0.25); line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="top-bar"></div>
+      <div class="card-body">
+        <div class="brand">NEX<span class="brand-accent">A</span></div>
+        
+        <h1>Welcome to NEXA Security, {{ first_name }}! 🛡️</h1>
+        
+        <p>Your account is fully activated. NEXA is your intelligent, approachably powerful cybersecurity partner designed to make deep threat visibility effortless.</p>
+        
+        <p>Here is how to run your first diagnostic in under 60 seconds:</p>
+        
+        <div class="features">
+          <div class="feature-item">
+            <div class="feature-icon">🔍</div>
+            <div>
+              <div class="feature-title">1. Enter Any Target Domain or IP</div>
+              <div class="feature-desc">Scan your Web infrastructure, API endpoints, or local staging servers non-destructively.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">⚡</div>
+            <div>
+              <div class="feature-title">2. Watch Real-Time Streaming Findings</div>
+              <div class="feature-desc">Live WebSocket status indicators display port discovery and vulnerability analysis as it happens.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🤖</div>
+            <div>
+              <div class="feature-title">3. Consult the NEXA AI Assistant</div>
+              <div class="feature-desc">Receive plain-English breakdowns and copy-paste remediation scripts tailored to your stack.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cta-wrap">
+          <a href="https://nexa-scan.click/dashboard" class="cta-btn">🚀 Launch Security Terminal</a>
+        </div>
+
+        <div class="security-note">
+          🛡️ <strong>Defensive Security Guarantee:</strong> NEXA operates under strict ethical self-scan policies. All scans are non-destructive, read-only diagnostics designed to protect your systems.
+        </div>
+      </div>
+      
+      <div class="footer">
+        © 2026 NEXA Security Operations. Sent via welcome@mail.nexa-scan.click.<br>
+        You are receiving this email because you registered on NEXA (nexa-scan.click).
+      </div>
+    </div>
+  </div>
+</body>
+</html>

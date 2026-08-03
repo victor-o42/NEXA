@@ -7,8 +7,12 @@ import urllib.parse
 import socket
 import re
 import time
+import logging
 from core.models import ScanHistory
 from core.services.orchestrator import run_nexa_orchestrator
+
+logger = logging.getLogger(__name__)
+
 
 class HeartbeatView(APIView):
     """
@@ -169,75 +173,134 @@ class ScanStreamView(APIView):
                 explanation="Scan in progress..."
             )
 
-            # --- Target validated and recorded, decrement available scans ---
-            if current_user and hasattr(current_user, 'profile'):
-                profile = current_user.profile
-                if not profile.is_admin:
-                    profile.scans_used += 1
-                    profile.save()
+            # --- Target validated and recorded, track scan usage on profile ---
+            profile = getattr(current_user, 'profile', None) if current_user else None
+            if profile and not profile.is_admin:
+                profile.scans_used += 1
+                profile.save()
 
             # ── Stream the correction notice before anything else ─────────────────
             if correction_msg:
-                time.sleep(1.0)
+                time.sleep(0.5)
                 yield f"data: {json.dumps({'status': 'notice', 'message': correction_msg})}\n\n"
 
-            # ── Step 2: DNS Resolution check ─────────────────────────────────────
-            time.sleep(1.0)
-            yield f"data: {json.dumps({'status': 'running', 'message': f'Resolving target: {clean_host}...'})}\n\n"
-
             try:
-                resolved_ip = socket.gethostbyname(clean_host)
-                time.sleep(1.5)
-                yield f"data: {json.dumps({'status': 'running', 'message': f'Resolved to {resolved_ip}. Initializing diagnostic engines...'})}\n\n"
-            except socket.gaierror:
-                scan_record.status = ScanHistory.ScanStatus.FAILED
-                scan_record.explanation = f"DNS resolution failed for '{clean_host}'."
+                # ── Step 2: DNS Resolution check ─────────────────────────────────────
+                time.sleep(0.5)
+                yield f"data: {json.dumps({'status': 'running', 'message': f'Resolving target: {clean_host}...'})}\n\n"
+
+                try:
+                    resolved_ip = socket.gethostbyname(clean_host)
+                    time.sleep(0.8)
+                    yield f"data: {json.dumps({'status': 'running', 'message': f'Resolved to IP: {resolved_ip}'})}\n\n"
+                    time.sleep(0.8)
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Initializing diagnostic engines...'})}\n\n"
+                except socket.gaierror:
+                    scan_record.status = ScanHistory.ScanStatus.FAILED
+                    scan_record.explanation = f"DNS resolution failed for '{clean_host}'."
+                    scan_record.save()
+                    if profile and not profile.is_admin and profile.scans_used > 0:
+                        profile.scans_used -= 1
+                        profile.save(update_fields=['scans_used'])
+                    error_msg = f"DNS resolution failed for '{clean_host}'. Double check the target and try again."
+                    yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
+                    return
+
+                # ── Step 3: Engine Activation Briefing ──────────────────────────────
+                time.sleep(0.8)
+                if effective_engine == 'port':
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Port Scanning Engine active'})}\n\n"
+                    time.sleep(0.8)
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Probing top 100 TCP/UDP service ports...'})}\n\n"
+                elif effective_engine == 'web':
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Web Application Scanner active'})}\n\n"
+                    time.sleep(0.8)
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Crawling HTTP endpoints for CVEs and misconfigurations...'})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Full Diagnostic mode active'})}\n\n"
+                    time.sleep(0.8)
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'Running Port Scanner baseline first, then Web Vulnerability Matrix...'})}\n\n"
+
+                scan_results = run_nexa_orchestrator(clean_host, engine=effective_engine, original_url=original_url)
+
+                if scan_results.get("status") == "failed":
+                    scan_record.status = ScanHistory.ScanStatus.FAILED
+                    scan_record.explanation = f"Scan failed: {scan_results.get('error')}"
+                    scan_record.save()
+                    if profile and not profile.is_admin and profile.scans_used > 0:
+                        profile.scans_used -= 1
+                        profile.save(update_fields=['scans_used'])
+                    error_msg = f"Scan failed: {scan_results.get('error', 'Unknown error')}"
+                    yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
+                    return
+
+                # Stream each discovered open port live to the terminal UI
+                open_ports = scan_results.get("open_ports", [])
+                if open_ports:
+                    for p in open_ports:
+                        port_num = p.get("port")
+                        svc = p.get("service", "Unknown")
+                        ver = p.get("version", "Unknown")
+                        
+                        # Clean up nested parens or duplicate version tags cleanly
+                        ver_clean = ver.replace("((", "(").replace("))", ")").strip() if ver else ""
+                        if ver_clean and ver_clean != "Unknown":
+                            msg = f"Discovered open port {port_num}/tcp: {svc} ({ver_clean})"
+                        else:
+                            msg = f"Discovered open port {port_num}/tcp: {svc}"
+                        yield f"data: {json.dumps({'status': 'running', 'message': msg})}\n\n"
+                        time.sleep(0.3)
+                else:
+                    yield f"data: {json.dumps({'status': 'running', 'message': 'No open ports detected on baseline perimeter.'})}\n\n"
+
+                # ── Step 4: AI Analysis ───────────────────────────────────────────────
+                time.sleep(0.6)
+                yield f"data: {json.dumps({'status': 'running', 'message': 'Synthesizing findings through NEXA AI intelligence layer...'})}\n\n"
+
+                ai_summary, token_usage = analyze_scan_results(scan_results, engine=effective_engine)
+
+                # ── Step 5: Persist and signal completion ─────────────────────────────
+                from core.services.ai_analyzer import GroqAnalysisService
+                cleaner = GroqAnalysisService()
+                try:
+                    cleaned_results = json.loads(cleaner.clean_scan_logs(scan_results))
+                except Exception:
+                    cleaned_results = scan_results
+
+                full_results = {
+                    "target": clean_host,
+                    "open_ports": scan_results.get("open_ports", []),
+                    "web_vulnerabilities": scan_results.get("web_vulnerabilities", []),
+                    "scanner_used": scan_results.get("scanner_used", ""),
+                    "duration_seconds": scan_results.get("duration_seconds", 0)
+                }
+
+                scan_record.status            = ScanHistory.ScanStatus.COMPLETED
+                scan_record.results           = full_results
+                scan_record.explanation       = ai_summary
+                scan_record.prompt_tokens     = token_usage.get("prompt_tokens", 0)
+                scan_record.completion_tokens = token_usage.get("completion_tokens", 0)
                 scan_record.save()
-                error_msg = f"DNS resolution failed for '{clean_host}'. Double check the target and try again."
-                yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
-                return
 
-            # ── Step 3: Run the Orchestrator ──────────────────────────────────────
-            time.sleep(1.5)
-            if effective_engine == 'port':
-                yield f"data: {json.dumps({'status': 'running', 'message': 'Port Scanning Engine active — probing top 100 TCP/UDP service ports...'})}\n\n"
-            elif effective_engine == 'web':
-                yield f"data: {json.dumps({'status': 'running', 'message': 'Web Application Scanner active — crawling HTTP endpoints for CVEs and misconfigurations...'})}\n\n"
-            else:
-                yield f"data: {json.dumps({'status': 'running', 'message': 'Full Diagnostic mode — Port Scanner running first, then Web Vulnerability Matrix...'})}\n\n"
+                yield f"data: {json.dumps({'status': 'completed', 'message': 'Diagnostic complete. Your full report has been saved.', 'scan_id': scan_record.id, 'ai_summary': ai_summary, 'scan_results': full_results})}\n\n"
 
-            scan_results = run_nexa_orchestrator(clean_host, engine=effective_engine, original_url=original_url)
-
-            if scan_results.get("status") == "failed":
-                scan_record.status = ScanHistory.ScanStatus.FAILED
-                scan_record.explanation = f"Scan failed: {scan_results.get('error')}"
-                scan_record.save()
-                error_msg = f"Scan failed: {scan_results.get('error', 'Unknown error')}"
-                yield f"data: {json.dumps({'status': 'error', 'message': error_msg})}\n\n"
-                return
-
-            # ── Step 4: AI Analysis ───────────────────────────────────────────────
-            yield f"data: {json.dumps({'status': 'running', 'message': 'Synthesizing findings through NEXA AI intelligence layer...'})}\n\n"
-
-            ai_summary, token_usage = analyze_scan_results(scan_results, engine=effective_engine)
-
-            # ── Step 5: Persist and signal completion ─────────────────────────────
-            # Save only the heavily optimized/filtered logs to the DB to save massive storage space
-            from core.services.ai_analyzer import GroqAnalysisService
-            cleaner = GroqAnalysisService()
-            try:
-                cleaned_results = json.loads(cleaner.clean_scan_logs(scan_results))
-            except Exception:
-                cleaned_results = {"error": "Failed to clean logs."}
-
-            scan_record.status            = ScanHistory.ScanStatus.COMPLETED
-            scan_record.results           = cleaned_results
-            scan_record.explanation       = ai_summary
-            scan_record.prompt_tokens     = token_usage.get("prompt_tokens", 0)
-            scan_record.completion_tokens = token_usage.get("completion_tokens", 0)
-            scan_record.save()
-
-            yield f"data: {json.dumps({'status': 'completed', 'message': 'Diagnostic complete. Your full report has been saved.', 'scan_id': scan_record.id, 'ai_summary': ai_summary, 'scan_results': cleaned_results})}\n\n"
+            except Exception as e:
+                logger.error(f"Scan stream error for {clean_host}: {str(e)}")
+                if scan_record:
+                    scan_record.status = ScanHistory.ScanStatus.FAILED
+                    scan_record.explanation = f"Diagnostic scan failed: {str(e)}"
+                    scan_record.save()
+                if profile and not profile.is_admin and profile.scans_used > 0:
+                    profile.scans_used -= 1
+                    profile.save(update_fields=['scans_used'])
+                yield f"data: {json.dumps({'status': 'error', 'message': f'Diagnostic scan failed: {str(e)}'})}\n\n"
+            finally:
+                if scan_record:
+                    scan_record.refresh_from_db()
+                    if scan_record.status == ScanHistory.ScanStatus.FAILED:
+                        if profile and not profile.is_admin and profile.scans_used > 0:
+                            profile.scans_used -= 1
+                            profile.save(update_fields=['scans_used'])
 
         response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
         response['Cache-Control'] = 'no-cache'
@@ -335,11 +398,15 @@ class UserPingView(APIView):
 class LoginEventView(APIView):
     """
     Records a real login event sent from the frontend.
+    Triggers a Resend API welcome email on the user's first successful login.
     """
     def post(self, request):
         if not request.user or not request.user.is_authenticated:
             return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
             
+        # Check if this is the user's first successful login
+        is_first_login = not LoginEvent.objects.filter(user=request.user, status='success').exists()
+
         # Extract IP from standard headers
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -359,8 +426,19 @@ class LoginEventView(APIView):
         # Mark user as active
         if hasattr(request.user, 'profile'):
             request.user.profile.save()
+
+        # Deliver welcome onboarding email via Resend API on first login
+        if is_first_login:
+            from core.services.email_service import send_welcome_email
+            first_name = request.user.first_name
+            if hasattr(request.user, 'profile') and request.user.profile.first_name:
+                first_name = request.user.profile.first_name
             
-        return Response({"status": "logged"}, status=status.HTTP_201_CREATED)
+            user_email = request.user.email
+            if user_email:
+                send_welcome_email(user_email, first_name=first_name)
+            
+        return Response({"status": "logged", "is_first_login": is_first_login}, status=status.HTTP_201_CREATED)
 
 class LoginHistoryView(APIView):
     """
@@ -453,12 +531,28 @@ class AdminUserQuotaView(APIView):
 
 class ScanHistoryView(APIView):
     """
-    Retrieves the scan history specifically for the authenticated user, bypassing the raw Supabase logic.
+    Retrieves the scan history specifically for the authenticated user.
+    Auto-reconciles stale 'SCANNING' records into 'FAILED' if left uncompleted.
     """
     def get(self, request):
         if not request.user or not request.user.is_authenticated:
             return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
             
+        # Clean up stale scanning records older than 2 minutes
+        from django.utils import timezone
+        import datetime
+        cutoff = timezone.now() - datetime.timedelta(minutes=2)
+        stale_scans = ScanHistory.objects.filter(
+            user=request.user, 
+            status=ScanHistory.ScanStatus.SCANNING, 
+            created_at__lt=cutoff
+        )
+        if stale_scans.exists():
+            stale_scans.update(
+                status=ScanHistory.ScanStatus.FAILED, 
+                explanation="Diagnostic scan process ended before completion."
+            )
+
         scans = ScanHistory.objects.filter(user=request.user).order_by('-created_at')[:50]
         data = [{
             "id": scan.id,

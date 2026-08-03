@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/nexa_logo.png';
+import NexaWordmark from './NexaWordmark';
 
 // ── Icons ─────────────────────────────────────────────────────────
 
@@ -223,6 +224,17 @@ export default function Sidebar() {
     try { localStorage.setItem('nexa-theme', isDark ? 'dark' : 'light'); } catch { }
   }, [isDark]);
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
@@ -286,7 +298,7 @@ export default function Sidebar() {
           </button>
           <div className="flex items-center gap-2">
             <img src={logo} alt="NEXA" className="h-6 w-auto object-contain" style={{ filter: 'drop-shadow(0 0 10px rgba(0,242,254,0.5))' }} />
-            <span className="text-sm font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+            <NexaWordmark height={16} glow={true} />
           </div>
         </div>
 
@@ -340,13 +352,13 @@ export default function Sidebar() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-            className="fixed inset-0 z-50 glass-container flex flex-col p-6"
+            className="fixed inset-0 z-50 glass-container flex flex-col p-6 overflow-y-auto max-h-screen"
             style={{ background: 'var(--c-surface-alpha)', backdropFilter: 'blur(20px)' }}
           >
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <img src={logo} alt="NEXA" className="h-8 w-auto object-contain" />
-                <span className="text-lg font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+                <NexaWordmark height={20} glow={true} />
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -444,14 +456,14 @@ export default function Sidebar() {
 
           {/* Brand and Theme Toggle */}
           <div className="flex items-center justify-between mb-8 px-1 mt-1">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3.5 flex-shrink-0">
               <img
                 src={logo}
                 alt="NEXA"
-                className="h-9 w-auto object-contain hover:scale-105 transition-transform duration-300"
+                className="h-9 w-auto object-contain flex-shrink-0 hover:scale-105 transition-transform duration-300"
                 style={{ filter: 'drop-shadow(0 0 14px rgba(0,242,254,0.55))' }}
               />
-              <span className="text-lg font-display font-bold tracking-wider" style={{ color: 'var(--c-text-primary)' }}>NEXA</span>
+              <NexaWordmark height={17} glow={true} className="flex-shrink-0" />
             </div>
             <button
               onClick={() => setIsDark(p => !p)}

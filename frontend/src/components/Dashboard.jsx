@@ -114,6 +114,15 @@ const SCANNER_OPTIONS = [
 function StatusBadge({ status, verdict }) {
   const s = (status || '').toUpperCase();
   
+  if (s === 'FAILED' || (verdict && verdict.toUpperCase().includes('ERROR'))) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest backdrop-blur-md" style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171', boxShadow: 'inset 0 1px 0 rgba(248,113,113,0.2)' }}>
+        <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+        Scan Error
+      </span>
+    );
+  }
+
   if (s === 'COMPLETED' && verdict) {
     const v = verdict.toUpperCase();
     if (v.includes('SAFE') || v.includes('SECURE') || v.includes('CLEAN')) {
@@ -157,9 +166,123 @@ function StatusBadge({ status, verdict }) {
   );
 }
 
+// ─── Custom Glassmorphic Dropdown ─────────────────────────────────────────────
+
+function CustomDropdown({ value, onChange, options, placeholder = 'Select...' }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 outline-none"
+        style={{
+          background: isOpen ? 'rgba(0,242,254,0.08)' : 'var(--c-surface-2)',
+          border: `1px solid ${isOpen ? 'var(--c-accent)' : 'var(--c-border-subtle)'}`,
+          color: 'var(--c-text-primary)',
+          boxShadow: isOpen ? '0 0 16px rgba(0,242,254,0.15)' : 'none',
+        }}
+      >
+        <div className="flex items-center gap-2 truncate">
+          {selectedOption?.color && (
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedOption.color, boxShadow: `0 0 6px ${selectedOption.color}` }} />
+          )}
+          <span className="truncate">{selectedOption?.label || placeholder}</span>
+        </div>
+        <svg
+          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[var(--c-accent)]' : 'text-[var(--c-text-muted)]'}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Glass Popover Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 4, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="absolute left-0 right-0 z-50 p-1.5 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
+            style={{
+              background: 'rgba(11, 12, 16, 0.94)',
+              border: '1px solid rgba(0, 242, 254, 0.25)',
+              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 242, 254, 0.1)',
+            }}
+          >
+            <div className="space-y-1">
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left outline-none"
+                    style={{
+                      background: isSelected ? 'rgba(0, 242, 254, 0.12)' : 'transparent',
+                      color: isSelected ? 'var(--c-accent)' : (opt.color || 'var(--c-text-primary)'),
+                    }}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {opt.color && (
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color, boxShadow: `0 0 6px ${opt.color}` }} />
+                      )}
+                      <span className="truncate">{opt.label}</span>
+                    </div>
+                    {isSelected && (
+                      <svg className="w-3.5 h-3.5 flex-shrink-0 text-[var(--c-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+const ENGINE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Engines' },
+  { value: 'port', label: 'Port Scanner' },
+  { value: 'web', label: 'Web App Scanner' },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Verdicts' },
+  { value: 'secure', label: 'Secure / Clean', color: '#4ade80' },
+  { value: 'critical', label: 'Critical / High Risk', color: '#f87171' },
+  { value: 'completed', label: 'Completed', color: 'var(--c-accent)' },
+  { value: 'failed', label: 'Failed', color: '#fbbf24' },
+];
+
 // ─── History Accordion Row ────────────────────────────────────────────────────
 
-function HistoryRow({ record, index }) {
+function HistoryRow({ record, index, onRescan }) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   
@@ -201,9 +324,9 @@ function HistoryRow({ record, index }) {
       {/* ── Collapsed header ── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-4 p-5 text-left transition-colors duration-200 outline-none hover:bg-white/5"
+        className="w-full flex items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 text-left transition-colors duration-200 outline-none hover:bg-white/5"
       >
-        <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
+        <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 items-center">
           <div className="min-w-0">
             <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--c-text-muted)' }}>Target</p>
             <p className="text-sm font-sans font-semibold truncate" style={{ color: 'var(--c-text-primary)' }}>{record.target}</p>
@@ -220,17 +343,44 @@ function HistoryRow({ record, index }) {
             <StatusBadge status={record.status} verdict={verdict} />
           </div>
         </div>
-        {/* Chevron */}
-        <motion.div
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-          style={{ background: open ? 'rgba(0,242,254,0.1)' : 'var(--c-surface)', color: open ? 'var(--c-accent)' : 'var(--c-text-muted)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </motion.div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {onRescan && (
+            <motion.button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRescan(record.target, record.scan_type);
+              }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all outline-none"
+              style={{
+                background: 'rgba(0,242,254,0.08)',
+                border: '1px solid rgba(0,242,254,0.25)',
+                color: 'var(--c-accent)',
+              }}
+              title="Rescan target"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden sm:inline">Rescan</span>
+            </motion.button>
+          )}
+
+          {/* Chevron */}
+          <motion.div
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ background: open ? 'rgba(0,242,254,0.1)' : 'var(--c-surface)', color: open ? 'var(--c-accent)' : 'var(--c-text-muted)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </motion.div>
+        </div>
       </button>
 
       {/* ── Expanded detail panel ── */}
@@ -390,9 +540,80 @@ export default function Dashboard({ session }) {
   const [selfScanMessage, setSelfScanMessage] = useState('');
 
   // Real scan history fetched from Supabase
-  const [scanHistory, setScanHistory]         = useState([]);
+  const [scanHistory, setScanHistory]         = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('nexa_scan_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [historyLoading, setHistoryLoading]   = useState(false);
-  const [userProfile, setUserProfile]         = useState(null);
+  const [searchQuery, setSearchQuery]         = useState('');
+  const [engineFilter, setEngineFilter]       = useState('all');
+  const [statusFilter, setStatusFilter]       = useState('all');
+
+  const [userProfile, setUserProfile]         = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('nexa_user_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const handleRescan = useCallback((targetUrl, scanType) => {
+    setTarget(targetUrl);
+    setSelectedScanner(scanType === 'WEB' ? 'web' : 'port');
+    navigate('/dashboard/scanner');
+  }, [navigate]);
+
+  const filteredHistory = React.useMemo(() => {
+    return scanHistory.filter(record => {
+      // 1. Search Query Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const targetMatch = (record.target || '').toLowerCase().includes(q);
+        const engineMatch = (record.scan_type === 'WEB' ? 'web application scanner' : 'port scanner').includes(q);
+        const statusMatch = (record.status || '').toLowerCase().includes(q);
+        let explanationMatch = false;
+        if (record.explanation) {
+          try {
+            const parsed = JSON.parse(record.explanation);
+            explanationMatch = (parsed.nexa_summary || '').toLowerCase().includes(q) || (parsed.security_verdict || '').toLowerCase().includes(q);
+          } catch (e) {
+            explanationMatch = record.explanation.toLowerCase().includes(q);
+          }
+        }
+        if (!targetMatch && !engineMatch && !statusMatch && !explanationMatch) return false;
+      }
+
+      // 2. Engine Filter
+      if (engineFilter !== 'all') {
+        if (engineFilter === 'port' && record.scan_type === 'WEB') return false;
+        if (engineFilter === 'web' && record.scan_type !== 'WEB') return false;
+      }
+
+      // 3. Status Filter
+      if (statusFilter !== 'all') {
+        const s = (record.status || '').toLowerCase();
+        let verdict = '';
+        if (record.explanation) {
+          try {
+            const parsed = JSON.parse(record.explanation);
+            verdict = (parsed.security_verdict || '').toLowerCase();
+          } catch (e) {}
+        }
+
+        if (statusFilter === 'completed' && s !== 'completed') return false;
+        if (statusFilter === 'failed' && s !== 'failed') return false;
+        if (statusFilter === 'secure' && !(verdict.includes('safe') || verdict.includes('secure') || verdict.includes('clean'))) return false;
+        if (statusFilter === 'critical' && !(verdict.includes('critical') || verdict.includes('high'))) return false;
+      }
+
+      return true;
+    });
+  }, [scanHistory, searchQuery, engineFilter, statusFilter]);
 
   // Helper to ensure we never use an expired JWT token for backend requests
   const getFreshToken = async () => {
@@ -465,6 +686,7 @@ export default function Dashboard({ session }) {
       if (response.ok) {
         const data = await response.json();
         setScanHistory(data);
+        try { sessionStorage.setItem('nexa_scan_history', JSON.stringify(data)); } catch (e) {}
       } else {
         if (response.status === 401) {
           await supabase.auth.signOut();
@@ -488,6 +710,7 @@ export default function Dashboard({ session }) {
       if (response.ok) {
         const data = await response.json();
         setUserProfile(data);
+        try { sessionStorage.setItem('nexa_user_profile', JSON.stringify(data)); } catch (e) {}
       } else if (response.status === 401) {
         await supabase.auth.signOut();
       }
@@ -528,10 +751,31 @@ export default function Dashboard({ session }) {
     if (activeTab === 'history') fetchHistory();
   }, [activeTab, fetchHistory]);
 
+  // ── Input Sanitization & Target Validation Helper ─────────────────────────
+  const validateAndCleanTarget = (rawTarget) => {
+    let cleaned = (rawTarget || '').trim();
+    if (!cleaned) return '';
+    
+    // Normalize target formatting by extracting hostname/domain if a protocol is supplied
+    try {
+      if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+        const parsed = new URL(cleaned);
+        cleaned = parsed.origin + parsed.pathname;
+      }
+    } catch (e) {
+      // Fallback to cleaned raw input if URL constructor throws
+    }
+    return cleaned.replace(/\/+$/, '');
+  };
+
   // ── Scan trigger ──────────────────────────────────────────────────────────
   const handleStartScan = async e => {
     e.preventDefault();
-    if (!target.trim()) return;
+    const cleanedTarget = validateAndCleanTarget(target);
+    if (!cleanedTarget) {
+      setConnectionError("Please specify a target domain, URL, or IP address.");
+      return;
+    }
 
     if (userProfile && !userProfile.is_admin && userProfile.scans_used >= userProfile.max_scans) {
       setConnectionError("Scan quota exceeded. Please upgrade your plan or contact support.");
@@ -548,7 +792,7 @@ export default function Dashboard({ session }) {
     if (eventSourceRef.current) eventSourceRef.current.close();
 
     const token = await getFreshToken();
-    const url = `${(window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click')}/api/v1/scan/stream/?target=${encodeURIComponent(target.trim())}&engine=${selectedScanner}&token=${token || ''}`;
+    const url = `${(window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:8000' : 'https://api.nexa-scan.click')}/api/v1/scan/stream/?target=${encodeURIComponent(cleanedTarget)}&engine=${selectedScanner}&token=${token || ''}`;
     const source = new EventSource(url);
     eventSourceRef.current = source;
 
@@ -561,7 +805,7 @@ export default function Dashboard({ session }) {
       if (data.status === 'error') {
         setConnectionError(data.message);
         setIsScanning(false);
-        source.close();
+        if (eventSourceRef.current) eventSourceRef.current.close();
         isDisplayingRef.current = false;
         return;
       }
@@ -576,16 +820,20 @@ export default function Dashboard({ session }) {
             results:     data.scan_results,
             explanation: data.ai_summary || '',
           });
-          setTimeout(() => navigate('/dashboard/results'), 1200); // small delay to let user see "completed" state before jumping
         }
         setIsScanning(false);
-        source.close();
-        isDisplayingRef.current = false;
+        if (eventSourceRef.current) eventSourceRef.current.close();
         
-        // Silently pull the new scan quota so the top-left UI reflects the increment
+        // Silently pull the updated scan quota
         fetchProfile();
+
+        // Smooth timed transition: allow user to visually digest the complete state
+        setTimeout(() => {
+          isDisplayingRef.current = false;
+          navigate('/dashboard/results');
+        }, 1600);
       } else {
-        // Wait artificially before showing the next message to give it that 'timely' feeling
+        // Timed, rhythmic population (1200ms) for smooth readable stream pacing
         setTimeout(() => {
           isDisplayingRef.current = false;
           processQueue();
@@ -604,14 +852,14 @@ export default function Dashboard({ session }) {
     };
 
     source.onerror = () => {
-      // If the backend naturally closes the stream because it finished fast, 
-      // but our artificial frontend delay hasn't processed 'completed' yet, ignore the error!
+      if (source) source.close();
       const hasCompleted = messageQueueRef.current.some(m => m.status === 'completed') || !isScanning;
       if (!hasCompleted) {
-        setConnectionError('Connection to NEXA diagnostic stream lost. Is the backend running?');
-        setIsScanning(false);
+        if (messageQueueRef.current.length === 0) {
+          setConnectionError('Diagnostic stream connection ended. Please verify your target or network.');
+          setIsScanning(false);
+        }
       }
-      source.close();
     };
   };
 
@@ -827,7 +1075,10 @@ export default function Dashboard({ session }) {
                       <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--c-border-subtle)' }}>
                         <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--c-text-muted)' }}>Diagnostic Stream</span>
                         {isScanning && (
-                          <span className="text-xs font-mono animate-pulse" style={{ color: 'var(--c-accent)' }}>NEXA Active</span>
+                          <span className="text-xs font-mono animate-pulse flex items-center gap-2" style={{ color: 'var(--c-accent)' }}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" style={{ boxShadow: '0 0 8px #00f2fe' }} />
+                            NEXA Active
+                          </span>
                         )}
                       </div>
                       <div className="space-y-3 font-mono text-xs max-h-[400px] overflow-y-auto pr-2">
@@ -836,49 +1087,63 @@ export default function Dashboard({ session }) {
                             const isNotice    = msg.type === 'notice';
                             const isCompleted = msg.type === 'completed';
                             const isError     = msg.type === 'error';
+                            const isOpenPort  = (msg.text || '').includes('Discovered open port');
+
                             return (
                               <motion.div
                                 layout
                                 key={idx}
-                                initial={{ opacity: 0, x: -10, scale: 0.98 }}
+                                initial={{ opacity: 0, x: -12, scale: 0.98 }}
                                 animate={{ opacity: 1, x: 0, scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                                className="flex items-start gap-3"
-                                style={isNotice ? {
-                                  background: 'rgba(251,191,36,0.07)',
-                                  border: '1px solid rgba(251,191,36,0.2)',
-                                  borderRadius: '0.75rem', padding: '0.75rem',
-                                } : {}}
+                                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                                className="flex items-start gap-3 rounded-xl transition-colors duration-200"
+                                style={
+                                  isNotice ? {
+                                    background: 'rgba(251,191,36,0.07)',
+                                    border: '1px solid rgba(251,191,36,0.2)',
+                                    padding: '0.75rem',
+                                  } : isOpenPort ? {
+                                    padding: '0.25rem 0',
+                                  } : { padding: '0.25rem 0' }
+                                }
                               >
-                                {/* Premium SVG icon per message type */}
+                                {/* Indicator per message type */}
                                 <span className="flex-shrink-0 mt-0.5" style={{
                                   color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fbbf24' : 'var(--c-accent)',
                                 }}>
                                   {isCompleted && (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                       <polyline points="20 6 9 17 4 12" />
                                     </svg>
                                   )}
                                   {isError && (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                       <line x1="18" y1="6" x2="6" y2="18" />
                                       <line x1="6" y1="6" x2="18" y2="18" />
                                     </svg>
                                   )}
                                   {isNotice && (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                       <circle cx="12" cy="12" r="10" />
                                       <line x1="12" y1="8" x2="12" y2="12" />
                                       <line x1="12" y1="16" x2="12.01" y2="16" />
                                     </svg>
                                   )}
-                                  {!isCompleted && !isError && !isNotice && (
+                                  {isOpenPort && (
+                                    <span className="relative flex h-2 w-2 mt-1">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" style={{ boxShadow: '0 0 8px #00f2fe' }} />
+                                    </span>
+                                  )}
+                                  {!isCompleted && !isError && !isNotice && !isOpenPort && (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <polyline points="9 18 15 12 9 6" />
                                     </svg>
                                   )}
                                 </span>
-                                <span className="leading-relaxed break-all" style={{ color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fde047' : 'var(--c-text-primary)' }}>
+                                <span className={`leading-relaxed break-all ${isOpenPort ? 'font-semibold tracking-tight text-white' : ''}`} style={{
+                                  color: isCompleted ? '#4ade80' : isError ? '#f87171' : isNotice ? '#fde047' : isOpenPort ? '#ffffff' : 'var(--c-text-primary)'
+                                }}>
                                   {msg.text}
                                 </span>
                               </motion.div>
@@ -929,6 +1194,81 @@ export default function Dashboard({ session }) {
                 </motion.button>
               </div>
 
+              {/* ── Search and Filters Bar ── */}
+              {scanHistory.length > 0 && (
+                <div className="space-y-3 pt-2 pb-1 border-b" style={{ borderColor: 'var(--c-border-subtle)' }}>
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    {/* Search Input (col-span-6) */}
+                    <div className="md:col-span-6 relative flex items-center">
+                      <svg className="w-4 h-4 absolute left-3.5 pointer-events-none" style={{ color: 'var(--c-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Search target, engine, or diagnostic verdict..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-9 py-2.5 rounded-xl text-xs font-mono transition-all outline-none"
+                        style={{
+                          background: 'var(--c-surface-2)',
+                          border: '1px solid var(--c-border-subtle)',
+                          color: 'var(--c-text-primary)',
+                        }}
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-3 text-xs opacity-60 hover:opacity-100 outline-none"
+                          style={{ color: 'var(--c-text-muted)' }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Engine Filter Dropdown (col-span-3) */}
+                    <div className="md:col-span-3">
+                      <CustomDropdown
+                        value={engineFilter}
+                        onChange={setEngineFilter}
+                        options={ENGINE_FILTER_OPTIONS}
+                        placeholder="All Engines"
+                      />
+                    </div>
+
+                    {/* Status Filter Dropdown (col-span-3) */}
+                    <div className="md:col-span-3">
+                      <CustomDropdown
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                        options={STATUS_FILTER_OPTIONS}
+                        placeholder="All Verdicts"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Filter active counter badge */}
+                  {(searchQuery || engineFilter !== 'all' || statusFilter !== 'all') && (
+                    <div className="flex items-center justify-between px-1 text-xs">
+                      <span style={{ color: 'var(--c-text-muted)' }}>
+                        Showing {filteredHistory.length} of {scanHistory.length} diagnostic sessions
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setEngineFilter('all');
+                          setStatusFilter('all');
+                        }}
+                        className="font-bold text-[11px] outline-none hover:underline"
+                        style={{ color: 'var(--c-accent)' }}
+                      >
+                        Reset Filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {historyLoading && scanHistory.length === 0 ? (
                 <div className="py-12 flex items-center justify-center gap-3">
                   <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
@@ -945,10 +1285,28 @@ export default function Dashboard({ session }) {
                     Run your first diagnostic from the Scanner tab. Each completed scan will appear here.
                   </p>
                 </div>
+              ) : filteredHistory.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3">
+                  <svg className="w-10 h-10 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--c-accent)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="text-sm font-medium" style={{ color: 'var(--c-text-muted)' }}>No matching scan records found</p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setEngineFilter('all');
+                      setStatusFilter('all');
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold transition-all outline-none"
+                    style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', color: 'var(--c-accent)' }}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {Object.entries(
-                    scanHistory.reduce((acc, record) => {
+                    filteredHistory.reduce((acc, record) => {
                       const d = new Date(record.created_at);
                       // Group by Local Date string
                       const dateKey = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -976,7 +1334,7 @@ export default function Dashboard({ session }) {
                       
                       {/* Records for this date */}
                       {records.map((record, i) => (
-                        <HistoryRow key={record.id} record={record} index={i} />
+                        <HistoryRow key={record.id} record={record} index={i} onRescan={handleRescan} />
                       ))}
                     </div>
                   ))}

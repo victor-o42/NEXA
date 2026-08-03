@@ -55,11 +55,14 @@ export default function PersonalInfo({ session }) {
     e.preventDefault();
     setLoading(true);
     try {
+      const cleanFirstName = (firstName || '').trim().slice(0, 50);
+      const cleanLastName = (lastName || '').trim().slice(0, 50);
+
       const { data, error } = await supabase.auth.updateUser({
         data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
+          first_name: cleanFirstName,
+          last_name: cleanLastName,
+          full_name: `${cleanFirstName} ${cleanLastName}`.trim(),
         }
       });
       if (error) throw error;
@@ -73,8 +76,8 @@ export default function PersonalInfo({ session }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName
+          first_name: cleanFirstName,
+          last_name: cleanLastName
         })
       });
       

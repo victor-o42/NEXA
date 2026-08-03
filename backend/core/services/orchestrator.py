@@ -78,8 +78,8 @@ def run_nexa_orchestrator(target: str, engine: str = 'port', original_url: str |
             try:
                 nm = nmap.PortScanner()
 
-                # -T4 = aggressive timing, -F = top 100 ports, --version-light = fast service probing
-                nm.scan(hosts=resolved_ip, arguments="-T4 -F --version-light --open")
+                # -sV = version probe, -T4 = fast timing, -F = top 100 ports, --host-timeout 15s = hard cap per host
+                nm.scan(hosts=resolved_ip, arguments="-sV -T4 -F --open --host-timeout 15s --max-retries 1")
 
                 if resolved_ip in nm.all_hosts():
                     host_data = nm[resolved_ip]
@@ -153,12 +153,13 @@ def run_nexa_orchestrator(target: str, engine: str = 'port', original_url: str |
                 cmd = [
                     nuclei_bin, "-u", web_url,
                     "-tags", "cve,misconfig,exposed",
+                    "-timeout", "4", "-retries", "1", "-mhe", "3",
                     "-silent", "-json-export", "-"
                 ]
-                # Hard cap: Nuclei can stall indefinitely without a timeout
+                # Hard cap: Nuclei process must return within 20 seconds maximum
                 process = subprocess.run(
                     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    text=True, timeout=30
+                    text=True, timeout=20
                 )
 
                 if process.returncode == 0 and process.stdout:

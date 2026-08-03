@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/nexa_logo.png';
+import NexaWordmark from './NexaWordmark';
 
 // ─── Eye Icon SVGs ────────────────────────────────────────────────────────────
 
@@ -144,7 +145,7 @@ export default function Landing() {
     if (createPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
     if (createPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     setIsLoading(true); clear();
-    const { error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabase.auth.signUp({
       email: createEmail.trim(),
       password: createPassword,
       options: {
@@ -157,6 +158,8 @@ export default function Landing() {
     });
     if (err) {
       setError(err.message);
+    } else if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setError('An account with this email address already exists. Please sign in with your email or Google account.');
     } else {
       setSuccessMsg('Account created! Check your inbox to confirm, then sign in.');
       setActiveTab(0);
@@ -268,18 +271,10 @@ export default function Landing() {
               className="h-14 w-auto object-contain mb-4"
               style={{ filter: 'drop-shadow(0 0 24px rgba(0,242,254,0.55))' }}
             />
-            {/* NEXA — big, gradient, standalone */}
-            <h1
-              className="text-4xl font-black tracking-tight text-center leading-none mb-1"
-              style={{
-                background: 'linear-gradient(135deg, var(--c-text-primary) 20%, var(--c-accent) 60%, var(--c-purple) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              NEXA
-            </h1>
+            {/* NEXA — Precision Vector Insignia (3 floating bars E + Chevron A) */}
+            <div className="flex justify-center mb-3">
+              <NexaWordmark height={40} glow={true} />
+            </div>
             {/* Tagline — smaller, softer, follows beneath */}
             <p
               className="text-sm font-semibold tracking-[0.18em] uppercase text-center"
