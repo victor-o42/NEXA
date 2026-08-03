@@ -251,7 +251,10 @@ class ScanStreamView(APIView):
                         yield f"data: {json.dumps({'status': 'running', 'message': msg})}\n\n"
                         time.sleep(0.3)
                 else:
-                    yield f"data: {json.dumps({'status': 'running', 'message': 'No open ports detected on baseline perimeter.'})}\n\n"
+                    if effective_engine == 'web':
+                        yield f"data: {json.dumps({'status': 'running', 'message': 'Web application surface analysis complete.'})}\n\n"
+                    else:
+                        yield f"data: {json.dumps({'status': 'running', 'message': 'No open ports detected on baseline perimeter.'})}\n\n"
 
                 # ── Step 4: AI Analysis ───────────────────────────────────────────────
                 time.sleep(0.6)

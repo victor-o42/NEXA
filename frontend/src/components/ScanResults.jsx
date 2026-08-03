@@ -238,6 +238,12 @@ export default function ScanResults({ scanResult }) {
                     {finding.risk_level}
                   </span>
                   <h4 className="font-bold text-lg leading-snug" style={{ color: 'var(--c-text-primary)' }}>{finding.title}</h4>
+                  {(finding.port || finding.location || finding.matched_at) && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono mt-3 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(0, 242, 254, 0.08)', color: '#00F2FE', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FE] animate-pulse flex-shrink-0" />
+                      {finding.port || finding.location || finding.matched_at}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="md:w-2/3 space-y-5">

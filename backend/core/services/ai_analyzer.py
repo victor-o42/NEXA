@@ -136,12 +136,13 @@ class GroqAnalysisService:
                 '  "verdict_explanation": "string (short, human-friendly summary answering: Is this safe to visit? Why?)",\n'
                 '  "risk_overview": {"Critical": int, "High": int, "Medium": int, "Low": int, "Info": int},\n'
                 '  "nexa_summary": "string (friendly teammate tone, varying your greeting/opening. NEVER claim 100% safety, say \'appears safe\')",\n'
-                '  "findings": [{"title": "string", "risk_level": "string", "why_it_matters": "string", "potential_impact": "string", "recommended_fix": "string"}],\n'
+                '  "findings": [{"title": "string", "port": "string (e.g. Port 443/tcp (HTTPS), Port 80/tcp, or https://domain:443)", "risk_level": "string", "why_it_matters": "string", "potential_impact": "string", "recommended_fix": "string"}],\n'
                 '  "recommendations": ["string (practical, prioritized, actionable advice)"],\n'
                 '  "technical_details": "string or object (Keep the detailed technical results here for developers)"\n'
                 "}\n"
-                "CRITICAL RULE: You MUST base your verdict exclusively on the raw scanner logs provided. "
+                "CRITICAL RULE 1: You MUST base your verdict exclusively on the raw scanner logs provided. "
                 "If the scan logs are empty or contain 0 vulnerabilities, you MUST conclude 'Appears Safe'. "
+                "CRITICAL RULE 2: For EVERY finding, you MUST specify the exact port, protocol, or endpoint location in the 'port' property (e.g., 'Port 443/tcp (HTTPS)' or 'Port 80/tcp'). "
                 "Do not include any other text, markdown formatting, or code blocks outside of the JSON object."
             )
 
