@@ -48,43 +48,44 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const AmbientOrbs = () => (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-      <motion.div
-        className="absolute rounded-full animate-orb-cyan"
-        style={{
-          top: '-18%', left: '-12%',
-          width: 700, height: 700,
-          background: 'radial-gradient(circle, rgba(0,242,254,0.13) 0%, transparent 65%)',
-          filter: 'blur(48px)',
-        }}
-        animate={{ scale: [1, 1.14, 1], opacity: [0.65, 1, 0.65] }}
-        transition={{ duration: 8, ease: 'easeInOut', repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute rounded-full animate-orb-purple"
-        style={{
-          bottom: '-18%', right: '-12%',
-          width: 820, height: 820,
-          background: 'radial-gradient(circle, rgba(155,93,229,0.12) 0%, transparent 65%)',
-          filter: 'blur(56px)',
-        }}
-        animate={{ scale: [1, 1.1, 1], opacity: [0.55, 0.9, 0.55] }}
-        transition={{ duration: 10, ease: 'easeInOut', repeat: Infinity, delay: 2 }}
-      />
-      <motion.div
-        className="absolute rounded-full animate-orb-mid"
-        style={{
-          top: '40%', right: '20%',
-          width: 380, height: 380,
-          background: 'radial-gradient(circle, rgba(79,172,254,0.07) 0%, transparent 68%)',
-          filter: 'blur(36px)',
-        }}
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.65, 0.3] }}
-        transition={{ duration: 12, ease: 'easeInOut', repeat: Infinity, delay: 4 }}
-      />
-    </div>
-  );
+// Hardware-accelerated ambient background orbs (pure CSS GPU animation, no JS frame blocking)
+const AmbientOrbs = () => (
+  <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+    <div
+      className="absolute rounded-full ambient-orb-cyan animate-orb-cyan"
+      style={{
+        top: '-18%', left: '-12%',
+        width: 700, height: 700,
+        background: 'radial-gradient(circle, rgba(0,242,254,0.13) 0%, transparent 65%)',
+        filter: 'blur(48px)',
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform, opacity'
+      }}
+    />
+    <div
+      className="absolute rounded-full ambient-orb-purple animate-orb-purple"
+      style={{
+        bottom: '-18%', right: '-12%',
+        width: 820, height: 820,
+        background: 'radial-gradient(circle, rgba(155,93,229,0.12) 0%, transparent 65%)',
+        filter: 'blur(56px)',
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform, opacity'
+      }}
+    />
+    <div
+      className="absolute rounded-full ambient-orb-mid animate-orb-mid"
+      style={{
+        top: '40%', right: '20%',
+        width: 380, height: 380,
+        background: 'radial-gradient(circle, rgba(79,172,254,0.07) 0%, transparent 68%)',
+        filter: 'blur(36px)',
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform, opacity'
+      }}
+    />
+  </div>
+);
 
   if (session === undefined) {
     return (

@@ -270,14 +270,37 @@
   }
   .animate-breathe { animation: breathe 3s ease-in-out infinite; }
 
-  /* Global ambient orb pulse (CSS fallback — Framer Motion drives the JS version) */
+  /* Global ambient orb pulse (Hardware-accelerated GPU composition) */
   @keyframes orb-pulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50%       { opacity: 1;   transform: scale(1.14); }
+    0%, 100% {
+      opacity: 0.65;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: translate3d(0, 0, 0) scale(1.12);
+    }
   }
-  .animate-orb-cyan   { animation: orb-pulse 8s  ease-in-out infinite; }
-  .animate-orb-purple { animation: orb-pulse 10s ease-in-out infinite; animation-delay: 2s; }
-  .animate-orb-mid    { animation: orb-pulse 12s ease-in-out infinite; animation-delay: 4s; }
+  .animate-orb-cyan   { animation: orb-pulse 8s  ease-in-out infinite; will-change: transform, opacity; }
+  .animate-orb-purple { animation: orb-pulse 10s ease-in-out infinite; animation-delay: 2s; will-change: transform, opacity; }
+  .animate-orb-mid    { animation: orb-pulse 12s ease-in-out infinite; animation-delay: 4s; will-change: transform, opacity; }
+
+  /* Mobile Performance Optimization for Low-Power GPUs */
+  @media (max-width: 768px) {
+    .ambient-orb-cyan {
+      width: 320px !important;
+      height: 320px !important;
+      filter: blur(24px) !important;
+    }
+    .ambient-orb-purple {
+      width: 360px !important;
+      height: 360px !important;
+      filter: blur(28px) !important;
+    }
+    .ambient-orb-mid {
+      display: none !important; /* Save GPU fillrate on mobile */
+    }
+  }
 
   /* Shimmer progress bar */
   @keyframes shimmer {
