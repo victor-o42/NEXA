@@ -110,3 +110,33 @@ class LoginEvent(models.Model):
 
     def __str__(self):
         return f"{self.user.username} login at {self.timestamp}"
+
+class BroadcastAnnouncement(models.Model):
+    """
+    Platform-wide announcements broadcast by CEO/Admins.
+    Supports in-app notifications, top banners, and optional Resend email blasts.
+    """
+    class AnnouncementType(models.TextChoices):
+        FEATURE = "feature", "New Feature"
+        MAINTENANCE = "maintenance", "Maintenance"
+        ALERT = "alert", "Security Alert"
+        GENERAL = "general", "General Announcement"
+
+    title = models.CharField(max_length=200, help_text="Announcement headline.")
+    message = models.TextField(help_text="Detailed body of the announcement.")
+    announcement_type = models.CharField(
+        max_length=20,
+        choices=AnnouncementType.choices,
+        default=AnnouncementType.GENERAL
+    )
+    is_active = models.BooleanField(default=True, help_text="Whether this notice is active in-app.")
+    sent_email = models.BooleanField(default=False, help_text="Whether this notice was emailed via Resend.")
+    recipient_count = models.IntegerField(default=0, help_text="Number of user emails targeted.")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='broadcasts')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.announcement_type.upper()}] {self.title} ({self.created_at.strftime('%Y-%m-%d')})"

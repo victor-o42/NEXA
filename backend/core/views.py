@@ -567,3 +567,189 @@ class ScanHistoryView(APIView):
             "created_at": scan.created_at
         } for scan in scans]
         return Response(data, status=status.HTTP_200_OK)
+
+class AdminSystemHealthView(APIView):
+    """
+    Live real-time system health, API response latency, worker presence,
+    and AI token cost efficiency telemetry for the CEO Command Center.
+    """
+    def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not hasattr(request.user, 'profile') or not request.user.profile.is_admin:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        import shutil
+        import os
+        import time
+        from django.db import connection
+        from django.db.models import Sum
+
+        # 1. Database Health & Ping
+        db_start = time.perf_counter()
+        db_status = "Connected"
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+                cursor.fetchone()
+            db_latency = round((time.perf_counter() - db_start) * 1000, 1)
+        except Exception as e:
+            db_status = f"Degraded: {str(e)[:40]}"
+            db_latency = -1
+
+        # 2. Scanner Binaries Health
+        nmap_path = shutil.which("nmap")
+        nuclei_path = shutil.which("nuclei")
+        backend_nuclei = os.path.join(os.path.dirname(os.path.dirname(__file__)), "bin", "nuclei")
+        if not nuclei_path and os.path.exists(backend_nuclei):
+            nuclei_path = backend_nuclei
+
+        scanner_status = {
+            "nmap": {
+                "available": bool(nmap_path),
+                "mode": "Raw Binary Engine" if nmap_path else "Pure Socket Fallback",
+                "path": nmap_path or "fallback-socket"
+            },
+            "nuclei": {
+                "available": bool(nuclei_path),
+                "mode": "Nuclei v3.8 Engine" if nuclei_path else "HTTP Surface Fallback",
+                "path": nuclei_path or "surface-fallback"
+            }
+        }
+
+        # 3. Groq AI Rotator Pool Health
+        from core.services.ai_analyzer import GROQ_KEYS, GROQ_MODEL, _current_key_idx
+        groq_status = {
+            "provider": "Groq LPU Acceleration",
+            "model": GROQ_MODEL,
+            "total_keys_in_pool": len(GROQ_KEYS),
+            "active_key_index": f"Key #{_current_key_idx + 1}",
+            "status": "Operational" if GROQ_KEYS else "API Key Missing"
+        }
+
+        # 4. Token Economics & Cost Savings vs OpenAI GPT-4 ($5.00 / 1M tokens)
+        token_stats = ScanHistory.objects.aggregate(
+            total_prompt=Sum('prompt_tokens'),
+            total_completion=Sum('completion_tokens')
+        )
+        total_prompt = token_stats.get('total_prompt') or 0
+        total_completion = token_stats.get('total_completion') or 0
+        total_tokens = total_prompt + total_completion
+        
+        # OpenAI GPT-4 equivalent cost estimate (~$5.00 / 1M tokens)
+        cost_saved = round((total_tokens / 1_000_000) * 5.00, 2)
+
+        return Response({
+            "timestamp": timezone.now(),
+            "database": {
+                "engine": "Supabase PostgreSQL",
+                "status": db_status,
+                "latency_ms": db_latency
+            },
+            "groq_ai": groq_status,
+            "scanners": scanner_status,
+            "token_economics": {
+                "total_prompt_tokens": total_prompt,
+                "total_completion_tokens": total_completion,
+                "total_tokens_consumed": total_tokens,
+                "estimated_cost_saved_usd": cost_saved
+            }
+        }, status=status.HTTP_200_OK)
+
+class AdminBroadcastView(APIView):
+    """
+    Manage system announcements and trigger instant in-app alerts and Resend email broadcasts.
+    """
+    def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not hasattr(request.user, 'profile') or not request.user.profile.is_admin:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        from core.models import BroadcastAnnouncement
+        broadcasts = BroadcastAnnouncement.objects.all()[:30]
+        data = [{
+            "id": b.id,
+            "title": b.title,
+            "message": b.message,
+            "announcement_type": b.announcement_type,
+            "is_active": b.is_active,
+            "sent_email": b.sent_email,
+            "recipient_count": b.recipient_count,
+            "created_at": b.created_at,
+            "created_by": b.created_by.email if b.created_by else "Admin"
+        } for b in broadcasts]
+        return Response(data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not hasattr(request.user, 'profile') or not request.user.profile.is_admin:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        from core.models import BroadcastAnnouncement
+        from core.services.email_service import send_broadcast_email
+        from django.contrib.auth.models import User
+
+        title = request.data.get("title", "").strip()
+        message = request.data.get("message", "").strip()
+        announcement_type = request.data.get("announcement_type", "general")
+        send_email = bool(request.data.get("send_email", False))
+
+        if not title or not message:
+            return Response({"error": "Title and message are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Collect user emails if emailing
+        recipient_count = 0
+        if send_email:
+            user_emails = list(
+                User.objects.exclude(email='').values_list('email', flat=True).distinct()
+            )
+            if user_emails:
+                recipient_count = send_broadcast_email(user_emails, title, message, announcement_type)
+
+        announcement = BroadcastAnnouncement.objects.create(
+            title=title,
+            message=message,
+            announcement_type=announcement_type,
+            sent_email=send_email,
+            recipient_count=recipient_count,
+            created_by=request.user,
+            is_active=True
+        )
+
+        return Response({
+            "status": "success",
+            "id": announcement.id,
+            "title": announcement.title,
+            "emails_dispatched": recipient_count
+        }, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, pk):
+        if not request.user or not request.user.is_authenticated:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not hasattr(request.user, 'profile') or not request.user.profile.is_admin:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        from core.models import BroadcastAnnouncement
+        from django.shortcuts import get_object_or_404
+        announcement = get_object_or_404(BroadcastAnnouncement, pk=pk)
+        announcement.delete()
+        return Response({"status": "deleted"}, status=status.HTTP_200_OK)
+
+class PublicAnnouncementsView(APIView):
+    """
+    Returns active platform announcements for in-app banner alerts and Notifications tab.
+    """
+    def get(self, request):
+        from core.models import BroadcastAnnouncement
+        announcements = BroadcastAnnouncement.objects.filter(is_active=True)[:10]
+        data = [{
+            "id": a.id,
+            "title": a.title,
+            "message": a.message,
+            "announcement_type": a.announcement_type,
+            "created_at": a.created_at
+        } for a in announcements]
+        return Response(data, status=status.HTTP_200_OK)
+
