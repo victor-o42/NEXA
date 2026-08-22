@@ -17,7 +17,6 @@ import Error404 from './components/Error404';
  */
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MarketingLanding from './components/MarketingLanding';
-import AnnouncementBanner from './components/AnnouncementBanner';
 
 function App() {
   const [session, setSession] = useState(undefined);
@@ -110,7 +109,6 @@ const AmbientOrbs = () => (
       >
         <Sidebar session={session} />
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0 md:max-h-[calc(100vh-3rem)] min-w-0">
-          <AnnouncementBanner />
           <Dashboard session={session} />
         </main>
       </div>

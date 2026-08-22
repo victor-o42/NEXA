@@ -285,17 +285,24 @@
   .animate-orb-purple { animation: orb-pulse 10s ease-in-out infinite; animation-delay: 2s; will-change: transform, opacity; }
   .animate-orb-mid    { animation: orb-pulse 12s ease-in-out infinite; animation-delay: 4s; will-change: transform, opacity; }
 
-  /* Mobile Performance Optimization for Low-Power GPUs */
+  /* Mobile Performance Optimization for Low-Power GPUs & Smooth Scrolling */
   @media (max-width: 768px) {
+    html, body {
+      -webkit-overflow-scrolling: touch;
+    }
+    .glass-panel {
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+    }
     .ambient-orb-cyan {
-      width: 320px !important;
-      height: 320px !important;
-      filter: blur(24px) !important;
+      width: 280px !important;
+      height: 280px !important;
+      filter: blur(20px) !important;
     }
     .ambient-orb-purple {
-      width: 360px !important;
-      height: 360px !important;
-      filter: blur(28px) !important;
+      width: 300px !important;
+      height: 300px !important;
+      filter: blur(22px) !important;
     }
     .ambient-orb-mid {
       display: none !important; /* Save GPU fillrate on mobile */
