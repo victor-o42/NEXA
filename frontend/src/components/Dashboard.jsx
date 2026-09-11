@@ -633,11 +633,48 @@ export default function Dashboard({ session }) {
   const eventSourceRef = useRef(null);
   const messageQueueRef = useRef([]);
   const isDisplayingRef = useRef(false);
-  const logsEndRef = useRef(null);
+  const logsContainerRef = useRef(null);
+  const streamCardRef = useRef(null);
+  const hasScrolledToStreamRef = useRef(false);
 
   useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (streamMessages.length === 0) {
+      hasScrolledToStreamRef.current = false;
+      return;
+    }
+
+    const container = logsContainerRef.current;
+    const isAtMaxHeight = container ? container.scrollHeight > container.clientHeight : false;
+
+    // 1. Once the box reaches its max height, auto-scroll (roll up) internally so newest log is at the bottom
+    if (isAtMaxHeight && container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+
+    // 2. Keep the Diagnostic Stream box comfortably visible in the browser viewport as it appears & expands
+    if (streamCardRef.current) {
+      if (!hasScrolledToStreamRef.current) {
+        hasScrolledToStreamRef.current = true;
+        // Smoothly bring the Diagnostic Stream card into center view when stream starts
+        requestAnimationFrame(() => {
+          streamCardRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        });
+      } else if (!isAtMaxHeight) {
+        // While expanding, keep its bottom edge in view as new lines push height down
+        const rect = streamCardRef.current.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 24) {
+          streamCardRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+        }
+      }
     }
   }, [streamMessages]);
 
@@ -1064,6 +1101,7 @@ export default function Dashboard({ session }) {
               <AnimatePresence mode="wait">
                 {streamMessages.length > 0 && (
                   <motion.div
+                    ref={streamCardRef}
                     layout
                     initial={{ opacity: 0, y: 20, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1081,7 +1119,10 @@ export default function Dashboard({ session }) {
                           </span>
                         )}
                       </div>
-                      <div className="space-y-3 font-mono text-xs max-h-[400px] overflow-y-auto pr-2">
+                      <div 
+                        ref={logsContainerRef}
+                        className="space-y-3 font-mono text-xs max-h-[200px] overflow-y-auto pr-2 scroll-smooth"
+                      >
                         <AnimatePresence mode="popLayout">
                           {streamMessages.map((msg, idx) => {
                             const isNotice    = msg.type === 'notice';
@@ -1150,7 +1191,6 @@ export default function Dashboard({ session }) {
                             );
                           })}
                         </AnimatePresence>
-                        <div ref={logsEndRef} />
                       </div>
                     </div>
                   </motion.div>

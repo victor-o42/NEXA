@@ -39,29 +39,28 @@ _ENGINE_CONTEXT = {
     ),
 }
 
+# Module-level Groq configuration and key pool state
+_RAW_KEYS = getattr(settings, 'GROQ_API_KEYS', None) or os.environ.get('GROQ_API_KEYS') or getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY') or ""
+GROQ_KEYS = [k.strip() for k in _RAW_KEYS.split(',') if k.strip()]
+GROQ_MODEL = getattr(settings, 'GROQ_MODEL', None) or os.environ.get('GROQ_MODEL', 'qwen/qwen3.8-27b')
+_current_key_idx = 0
+
 class GroqAnalysisService:
     """
     Handles token optimization and Groq AI inference to act as an elite security auditor.
     Automatically rotates through multiple API keys if rate-limited.
     """
     def __init__(self):
-        self.clients = []
-        
-        # Load multiple keys separated by comma
-        raw_keys = getattr(settings, 'GROQ_API_KEYS', None) or os.environ.get('GROQ_API_KEYS')
-        
-        # Fallback to single key if GROQ_API_KEYS is not set
-        if not raw_keys:
-            single_key = getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY')
-            if single_key:
-                raw_keys = single_key
-                
+        global GROQ_KEYS, GROQ_MODEL, _current_key_idx
+        # Dynamic check in case settings/env were set after module load
+        raw_keys = getattr(settings, 'GROQ_API_KEYS', None) or os.environ.get('GROQ_API_KEYS') or getattr(settings, 'GROQ_API_KEY', None) or os.environ.get('GROQ_API_KEY') or ""
         if raw_keys:
-            keys = [k.strip() for k in raw_keys.split(',') if k.strip()]
-            for k in keys:
-                self.clients.append(Groq(api_key=k))
-        self.model_name = getattr(settings, 'GROQ_MODEL', 'llama-3.3-70b-versatile')
-        self.current_client_index = 0
+            GROQ_KEYS = [k.strip() for k in raw_keys.split(',') if k.strip()]
+        GROQ_MODEL = getattr(settings, 'GROQ_MODEL', None) or os.environ.get('GROQ_MODEL', 'qwen/qwen3.8-27b')
+
+        self.clients = [Groq(api_key=k) for k in GROQ_KEYS]
+        self.model_name = GROQ_MODEL
+        self.current_client_index = _current_key_idx if self.clients else 0
 
     def get_client(self) -> Optional[Groq]:
         if not self.clients:
@@ -70,8 +69,10 @@ class GroqAnalysisService:
         
     def rotate_client(self):
         """Rotates to the next API key in the pool."""
+        global _current_key_idx
         if self.clients:
             self.current_client_index = (self.current_client_index + 1) % len(self.clients)
+            _current_key_idx = self.current_client_index
             logger.info(f"Rotated to Groq API Key #{self.current_client_index + 1}")
 
     def clean_scan_logs(self, scan_results: dict) -> str:

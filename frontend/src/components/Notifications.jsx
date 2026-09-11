@@ -18,7 +18,7 @@ const NOTIFICATIONS_LIST = [
     id: 2,
     type: 'system',
     title: 'High-Availability AI Cluster',
-    message: 'NEXA AI reasoning pipeline is backed by automated multi-key rotation ensuring continuous LLaMA 3.3 70B synthesis with zero downtime.',
+    message: 'NEXA AI reasoning pipeline is backed by automated multi-key rotation and real-time CVE intelligence with zero downtime.',
     date: 'Active',
     icon: (
       <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
